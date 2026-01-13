@@ -1,0 +1,3058 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Motoboy Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #141923;
+      --card: #171a21;
+      --muted: #9aa0a6;
+      --text: #f1f1f1;
+      --primary: #f5c542;
+      --primary2: #c99700;
+      --danger: #ff5f56;
+      --ok: #32d74b;
+      --shadow: 0 12px 30px rgba(0, 0, 0, .45);
+      --radius: 22px;
+      --radius2: 16px;
+      --line: rgba(255, 255, 255, .08);
+      --line2: rgba(255, 255, 255, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 18% 0%, rgba(245, 197, 66, .10), rgba(0, 0, 0, 0)),
+        radial-gradient(900px 500px at 100% 10%, rgba(201, 151, 0, .10), rgba(0, 0, 0, 0)),
+        var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ===== Topbar ===== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0));
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 5px rgba(245, 197, 66, .12);
+    }
+
+    .brandText {
+      line-height: 1.1;
+    }
+
+    .brandText>div:first-child {
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .brandText .sub {
+      color: rgba(255, 255, 255, .7);
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .winBtns {
+      display: flex;
+      gap: 10px;
+    }
+
+    .winBtn {
+      width: 42px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .10);
+      background: rgba(255, 255, 255, .06);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: .15s ease;
+    }
+
+    .winBtn:hover {
+      background: rgba(255, 255, 255, .10);
+      transform: translateY(-1px);
+    }
+
+    .winBtn.close:hover {
+      background: rgba(255, 95, 86, .20);
+      border-color: rgba(255, 95, 86, .35);
+    }
+
+    .glyph {
+      display: block;
+      width: 14px;
+      height: 14px;
+      position: relative;
+      opacity: .9;
+    }
+
+    .g-min::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 1px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    .g-max::before {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border: 2px solid #fff;
+      border-radius: 3px;
+    }
+
+    .g-close::before,
+    .g-close::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 14px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      top: 6px;
+      transform-origin: center;
+    }
+
+    .g-close::before {
+      transform: rotate(45deg);
+    }
+
+    .g-close::after {
+      transform: rotate(-45deg);
+    }
+
+    /* ===== Layout ===== */
+    .wrap {
+      padding: 18px;
+      height: calc(100% - 70px);
+      overflow: hidden;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 18px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: var(--radius);
+      pointer-events: none;
+      background: radial-gradient(600px 220px at 20% 0%, rgba(245, 197, 66, .08), rgba(0, 0, 0, 0));
+      opacity: .9;
+    }
+
+    .panelInner {
+      position: relative;
+      padding: 18px;
+      height: 100%;
+      overflow: auto;
+    }
+
+    .hTitle {
+      font-size: 18px;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .hSub {
+      margin: 4px 0 16px;
+      color: rgba(255, 255, 255, .62);
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row+.row {
+      margin-top: 10px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .10);
+      color: #fff;
+      border-radius: 16px;
+      padding: 12px 14px;
+      outline: none;
+      transition: .15s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(245, 197, 66, .55);
+      box-shadow: 0 0 0 4px rgba(245, 197, 66, .12);
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: .15s ease;
+      user-select: none;
+      color: #fff;
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, .10);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, var(--primary), #ffdf7a);
+      color: #151515;
+      border: none;
+      box-shadow: 0 12px 26px rgba(245, 197, 66, .18);
+    }
+
+    .btn.primary:hover {
+      filter: brightness(1.02);
+    }
+
+    .btn.danger {
+      background: linear-gradient(180deg, #ff5f56, #ff3b30);
+      color: #fff;
+      border: none;
+      box-shadow: 0 12px 26px rgba(255, 95, 86, .16);
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, .12);
+      color: #fff;
+    }
+
+    .miniNote {
+      margin-top: 14px;
+      color: rgba(255, 255, 255, .55);
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    /* ===== Top actions (right panel header) ===== */
+    .boardTop {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .boardTop .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .10);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, .78);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+      justify-content: center;
+    }
+
+    .pill strong {
+      color: #fff;
+    }
+
+    /* ===== Board bonito ===== */
+    .boardWrap {
+      position: relative;
+      border-radius: 20px;
+    }
+
+    .board {
+      display: flex;
+      gap: 14px;
+      overflow: auto;
+      padding: 10px 8px 14px;
+      scroll-snap-type: x mandatory;
+      scroll-padding-left: 8px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable;
+    }
+
+    .board::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .board::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, .06);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .10);
+    }
+
+    .board::-webkit-scrollbar-thumb {
+      background: linear-gradient(90deg, rgba(245, 197, 66, .85), rgba(201, 151, 0, .85));
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, .35);
+    }
+
+    .lane {
+      scroll-snap-align: start;
+      width: 380px;
+      min-width: 380px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 12px 26px rgba(0, 0, 0, .25);
+    }
+
+    .laneTop {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .laneTitle strong {
+      font-size: 16px;
+    }
+
+    .laneTitle span {
+      display: block;
+      color: rgba(255, 255, 255, .55);
+      font-size: 12px;
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    .laneBtns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .miniBtn {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .10);
+      background: rgba(255, 255, 255, .06);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #fff;
+      transition: .15s ease;
+    }
+
+    .miniBtn:hover {
+      background: rgba(255, 255, 255, .10);
+      transform: translateY(-1px);
+    }
+
+    .miniBtn.gold {
+      border-color: rgba(245, 197, 66, .35);
+      color: var(--primary);
+    }
+
+    .miniBtn.red {
+      border-color: rgba(255, 95, 86, .35);
+      color: #ffb5b0;
+    }
+
+    .laneBody {
+      padding: 14px;
+    }
+
+    .draft {
+      background: rgba(0, 0, 0, .25);
+      border: 1px dashed rgba(255, 255, 255, .12);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .draftTop {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .seg {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .seg button {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .06);
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+      transition: .15s ease;
+      font-size: 12px;
+    }
+
+    .seg button.active {
+      border-color: rgba(245, 197, 66, .50);
+      background: rgba(245, 197, 66, .14);
+      color: var(--primary);
+    }
+
+    .draftActions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .draftActions .btn {
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .order {
+      background: rgba(0, 0, 0, .22);
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 18px;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .order:last-child {
+      margin-bottom: 0;
+    }
+
+    .order .meta {
+      flex: 1;
+    }
+
+    .order .code {
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: .5px;
+    }
+
+    .order .sub {
+      color: rgba(255, 255, 255, .65);
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 2px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .10);
+      background: rgba(255, 255, 255, .05);
+    }
+
+    .tag.gold {
+      border-color: rgba(245, 197, 66, .35);
+      color: var(--primary);
+    }
+
+    .order .tools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .order input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+
+    .trash {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 95, 86, .30);
+      background: rgba(255, 95, 86, .12);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      color: #ffb5b0;
+      font-weight: 900;
+      transition: .15s ease;
+      flex: 0 0 auto;
+    }
+
+    .trash:hover {
+      background: rgba(255, 95, 86, .18);
+      transform: translateY(-1px);
+    }
+
+    .emptyBoard {
+      margin: 18px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 18px;
+      background: rgba(0, 0, 0, .25);
+      color: rgba(255, 255, 255, .75);
+      font-weight: 700;
+    }
+
+    /* ===== Toast (com botão de desfazer) ===== */
+    .toastWrap {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      width: 340px;
+      border-radius: 18px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, .10);
+      background: rgba(0, 0, 0, .55);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, .55);
+      backdrop-filter: blur(14px);
+      animation: pop .18s ease;
+    }
+
+    @keyframes pop {
+      from {
+        transform: translateY(8px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    .toast .tTitle {
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .toast .tMsg {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, .72);
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.25;
+      white-space: pre-line;
+    }
+
+    .toast .tActions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .toast .tBtn {
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-weight: 900;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .08);
+      color: #fff;
+      transition: .15s ease;
+    }
+
+    .toast .tBtn:hover {
+      background: rgba(255, 255, 255, .12);
+      transform: translateY(-1px);
+    }
+
+    .toast.ok {
+      border-color: rgba(50, 215, 75, .25);
+    }
+
+    .toast.bad {
+      border-color: rgba(255, 95, 86, .25);
+    }
+
+    .toast.warn {
+      border-color: rgba(245, 197, 66, .28);
+    }
+
+    /* ===== Electron: titlebar arrastável ===== */
+    #appTitlebar {
+      -webkit-app-region: drag;
+    }
+
+    #appTitlebar button,
+    #appTitlebar input,
+    #appTitlebar a {
+      -webkit-app-region: no-drag;
+    }
+
+    /* ===== Confirm modal ===== */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 18px;
+    }
+
+    .confirm-overlay.hidden {
+      display: none;
+    }
+
+    .confirm-modal {
+      width: min(520px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line2);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+      padding: 16px;
+      animation: popIn .12s ease-out;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: translateY(8px) scale(.98);
+        opacity: .2;
+      }
+
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .confirm-header {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .confirm-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      background: rgba(255, 95, 86, .14);
+      color: #ffb5b0;
+      border: 1px solid rgba(255, 95, 86, .28);
+      flex: 0 0 auto;
+    }
+
+    .confirm-titles h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .confirm-titles p {
+      margin: 6px 0 0;
+      color: rgba(255, 255, 255, .72);
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: pre-line;
+      font-weight: 700;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    /* ===== Quick Add modal ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      padding: 18px;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      width: min(640px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line2);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+      padding: 16px;
+      animation: popIn .12s ease-out;
+    }
+
+    .modalTop {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .modalTop h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .modalGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .modalGrid .full {
+      grid-column: 1 / -1;
+    }
+
+    /* ===== Views (Board/Stats/History) ===== */
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    /* ===== Stats ===== */
+    .statsGrid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 12px 0 14px;
+    }
+
+    @media (max-width: 980px) {
+      .statsGrid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .kpi {
+      background: rgba(0, 0, 0, .22);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 18px;
+      padding: 12px 14px;
+    }
+
+    .kpi .kTitle {
+      color: rgba(255, 255, 255, .65);
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .kpi .kValue {
+      margin-top: 6px;
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .kpi .kSub {
+      margin-top: 4px;
+      color: rgba(255, 255, 255, .55);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .statsCard {
+      background: rgba(0, 0, 0, .22);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 20px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .dayRow {
+      display: grid;
+      grid-template-columns: 120px 1fr 70px 140px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .dayRow:last-child {
+      border-bottom: none;
+    }
+
+    .barWrap {
+      height: 10px;
+      background: rgba(255, 255, 255, .06);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary2));
+      width: 0%;
+    }
+
+    .dayDate {
+      font-weight: 900;
+    }
+
+    .dayCount {
+      text-align: right;
+      font-weight: 900;
+    }
+
+    .dayValue {
+      text-align: right;
+      color: rgba(255, 255, 255, .8);
+      font-weight: 900;
+    }
+
+    .miniGrid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .miniGrid2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ===== History ===== */
+    .historyTop {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 10px 0 12px;
+    }
+
+    .historyTop .grow {
+      flex: 1 1 260px;
+    }
+
+    .historyList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .hDay {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .04);
+      font-weight: 900;
+      color: rgba(255, 255, 255, .85);
+    }
+
+    .hItem {
+      background: rgba(0, 0, 0, .22);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 18px;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .hLeft {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .hCode {
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: .4px;
+    }
+
+    .hMeta {
+      margin-top: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: rgba(255, 255, 255, .7);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .hRight {
+      text-align: right;
+      min-width: 140px;
+      font-weight: 900;
+    }
+
+    .hRight .time {
+      color: rgba(255, 255, 255, .65);
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .wrap {
+        height: auto;
+        overflow: visible;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .lane {
+        width: 92vw;
+        min-width: 92vw;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar" id="appTitlebar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div class="brandText">
+        <div>Motoboy Manager</div>
+        <div class="sub">Adicionar pedidos pelo + na coluna • plataforma automática (3/4/6)</div>
+      </div>
+    </div>
+
+    <div class="winBtns">
+      <button class="winBtn" id="btnMin" title="Minimizar"><span class="glyph g-min"></span></button>
+      <button class="winBtn" id="btnMax" title="Maximizar"><span class="glyph g-max"></span></button>
+      <button class="winBtn close" id="btnClose" title="Fechar"><span class="glyph g-close"></span></button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid">
+
+      <!-- LEFT -->
+      <div class="panel">
+        <div class="panelInner">
+          <h2 class="hTitle">Motoboys</h2>
+          <div class="hSub">Crie o motoboy e adicione pedidos no botão + da coluna dele</div>
+
+          <div class="row">
+            <div style="flex:1">
+              <div style="font-weight:900; margin:0 0 8px; color: rgba(255,255,255,.78)">Nome do motoboy</div>
+              <input id="motoboyName" placeholder="Ex: João" />
+            </div>
+            <button class="btn primary" id="btnAddMotoboy"
+              style="min-width:110px;height:43px;align-self:flex-end;margin-top:26px;display:inline-flex;align-items:center;justify-content:center;">
+              Adicionar
+            </button>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn danger" id="btnClearAll" style="width:100%">Apagar tudo</button>
+          </div>
+
+          <div class="row">
+            <button class="btn" id="btnExportBackup" style="width:100%">Exportar backup</button>
+            <button class="btn" id="btnImportBackup" style="width:100%">Importar (substituir)</button>
+          </div>
+          <div class="row">
+            <button class="btn ghost" id="btnMergeBackup" style="width:100%">Importar (mesclar)</button>
+          </div>
+
+          <div class="miniNote">
+            <div style="font-weight:900; margin-bottom:6px; color: rgba(255,255,255,.75)">Regras de código</div>
+            • Anota: 3 dígitos<br>
+            • iFood: 4 dígitos<br>
+            • 99Food: 6 dígitos<br><br>
+            <div style="opacity:.9">
+              Pagamento: Dinheiro / Online / Cartão<br>
+              Valor: opcional
+            </div>
+
+            <div style="margin-top:12px; opacity:.9">
+              <div style="font-weight:900; margin-bottom:6px; color: rgba(255,255,255,.75)">Atalhos</div>
+              • Ctrl+F: abrir Histórico e buscar<br>
+              • Ctrl+Shift+A: Adicionar rápido<br>
+              • Esc: fechar modal
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="panel">
+        <div class="panelInner">
+
+          <!-- VIEW: BOARD -->
+          <div id="viewBoard" class="view active">
+            <div class="boardTop">
+              <div>
+                <h2 class="hTitle" style="margin:0">Filas por Motoboy</h2>
+                <div class="hSub" style="margin:4px 0 0">Adicione no + da coluna • marque e finalize</div>
+              </div>
+
+              <div class="actions">
+                <div class="pill">Selecionados: <strong id="selCount">0</strong></div>
+                <button class="btn" id="btnSelectAll">Selecionar tudo</button>
+                <button class="btn" id="btnUnselectAll">Desmarcar</button>
+                <button class="btn primary" id="btnDispatch">Finalizar selecionados</button>
+
+                <button class="btn ghost" id="btnQuickAdd" title="Adicionar rápido (Ctrl+Shift+A)">➕ Rápido</button>
+                <button class="btn ghost" id="btnGoStats" title="Ver estatísticas gerais">📊 Estatísticas</button>
+                <button class="btn ghost" id="btnGoHistory" title="Ver histórico / buscar (Ctrl+F)">🕘
+                  Histórico</button>
+
+                <div class="pill">Total de pedidos: <strong id="totalCount">0</strong></div>
+              </div>
+            </div>
+
+            <div class="boardWrap">
+              <div class="board" id="board"></div>
+            </div>
+          </div>
+
+          <!-- VIEW: STATS -->
+          <div id="viewStats" class="view">
+            <div class="boardTop">
+              <div>
+                <h2 class="hTitle" style="margin:0">Estatísticas gerais</h2>
+                <div class="hSub" style="margin:4px 0 0">Total por dia • sem separar por motoboy</div>
+              </div>
+
+              <div class="actions">
+                <button class="btn" data-range="7">7 dias</button>
+                <button class="btn" data-range="30">30 dias</button>
+                <button class="btn" data-range="90">90 dias</button>
+                <button class="btn" data-range="all">Tudo</button>
+                <button class="btn primary" id="btnBackBoardFromStats">← Voltar</button>
+              </div>
+            </div>
+
+            <div id="statsRoot"></div>
+          </div>
+
+          <!-- VIEW: HISTORY -->
+          <div id="viewHistory" class="view">
+            <div class="boardTop">
+              <div>
+                <h2 class="hTitle" style="margin:0">Histórico</h2>
+                <div class="hSub" style="margin:4px 0 0">Pedidos finalizados • buscar • filtrar • exportar CSV</div>
+              </div>
+
+              <div class="actions">
+                <button class="btn" id="btnExportCSV">⬇ Exportar CSV</button>
+                <button class="btn primary" id="btnBackBoardFromHistory">← Voltar</button>
+              </div>
+            </div>
+
+            <div class="historyTop">
+              <div class="grow">
+                <input id="histSearch" placeholder="Buscar por código… (Ctrl+F)" />
+              </div>
+
+              <select id="histPlatform" style="max-width:200px">
+                <option value="all">Todas plataformas</option>
+                <option value="ifood">iFood</option>
+                <option value="anota">Anota</option>
+                <option value="99food">99Food</option>
+              </select>
+
+              <select id="histRange" style="max-width:180px">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="all">Tudo</option>
+              </select>
+
+              <button class="btn" id="btnClearHistoryFilter">Limpar filtros</button>
+            </div>
+
+            <div id="historyKPIs"></div>
+            <div id="historyList" class="historyList"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toastWrap" id="toasts"></div>
+
+  <input id="backupFile" type="file" accept="application/json" style="display:none" />
+
+  <!-- Confirm Modal -->
+  <div id="confirmOverlay" class="confirm-overlay hidden" aria-hidden="true">
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="confirm-header">
+        <div class="confirm-icon" id="confirmIcon">!</div>
+        <div class="confirm-titles">
+          <h3 id="confirmTitle">Confirmar ação</h3>
+          <p id="confirmMessage">Tem certeza?</p>
+        </div>
+      </div>
+
+      <div class="confirm-actions">
+        <button id="confirmCancelBtn" class="btn" type="button">Cancelar</button>
+        <button id="confirmOkBtn" class="btn danger" type="button">Apagar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Add Modal -->
+  <div id="quickOverlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="quickTitle">
+      <div class="modalTop">
+        <h3 id="quickTitle">Adicionar rápido</h3>
+        <button class="miniBtn" id="btnCloseQuick" title="Fechar">×</button>
+      </div>
+
+      <div class="modalGrid">
+        <div>
+          <div style="font-weight:900; color: rgba(255,255,255,.75); margin-bottom:6px">Motoboy</div>
+          <select id="quickMotoboy"></select>
+        </div>
+
+        <div>
+          <div style="font-weight:900; color: rgba(255,255,255,.75); margin-bottom:6px">Valor (opcional)</div>
+          <input id="quickValue" placeholder="Ex: 32,90" />
+        </div>
+
+        <div class="full">
+          <div style="font-weight:900; color: rgba(255,255,255,.75); margin-bottom:6px">Códigos (um por linha ou espaço)
+          </div>
+          <textarea id="quickCodes" placeholder="Cole aqui…"></textarea>
+          <div style="margin-top:8px; color: rgba(255,255,255,.55); font-size:12px; font-weight:700">
+            Dica: Ctrl+Enter adiciona
+          </div>
+        </div>
+
+        <div class="full">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px">
+            <div style="font-weight:900; color: rgba(255,255,255,.75)">Pagamento</div>
+            <div class="seg" id="quickPaySeg">
+              <button data-pay="dinheiro" class="active" type="button">Dinheiro</button>
+              <button data-pay="online" type="button">Online</button>
+              <button data-pay="cartao" type="button">Cartão</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="full" style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px">
+          <button class="btn" id="btnCancelQuick" type="button">Cancelar</button>
+          <button class="btn primary" id="btnDoQuickAdd" type="button">Adicionar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (q) => document.querySelector(q);
+
+    const on = (sel, ev, fn) => {
+      const el = $(sel);
+      if (!el) return;
+      el.addEventListener(ev, fn);
+    };
+
+    // =========================
+    // Helpers
+    // =========================
+    function uid() {
+      return Math.random().toString(16).slice(2) + Date.now().toString(16);
+    }
+
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function escapeHtml(s) {
+      return String(s || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function toast(type, title, msg, actionText, actionFn, timeout = 2600) {
+      const wrap = $("#toasts");
+      const t = document.createElement("div");
+      t.className = `toast ${type || ""}`.trim();
+
+      const hasAction = !!actionText && typeof actionFn === "function";
+
+      t.innerHTML = `
+        <p class="tTitle">${escapeHtml(title || "")}</p>
+        <p class="tMsg">${escapeHtml(msg || "")}</p>
+        ${hasAction ? `
+          <div class="tActions">
+            <button class="tBtn" type="button">${escapeHtml(actionText)}</button>
+          </div>
+        ` : ``}
+      `;
+
+      wrap.appendChild(t);
+
+      if (hasAction) {
+        const btn = t.querySelector(".tBtn");
+        btn.addEventListener("click", () => {
+          try { actionFn(); } catch (e) { }
+          t.remove();
+        });
+      }
+
+      const removeLater = setTimeout(() => {
+        if (t.isConnected) t.remove();
+      }, timeout);
+
+      // se clicou no toast, não remove na hora (evita stress)
+      t.addEventListener("mouseenter", () => clearTimeout(removeLater), { once: true });
+
+      return t;
+    }
+
+    function moneyBR(v) {
+      const s = String(v || "").replace(/[^\d,\.]/g, "").replace(",", ".");
+      const n = Number(s);
+      if (!isFinite(n) || n <= 0) return "";
+      return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function parsePayToken(t) {
+      const s = String(t || "").toLowerCase().trim();
+      if (!s) return null;
+
+      if (["dinheiro", "din", "d"].includes(s)) return "dinheiro";
+      if (["online", "pix", "on"].includes(s)) return "online";
+      if (["cartao", "cartão", "card", "c"].includes(s)) return "cartao";
+
+      return null;
+    }
+
+    function isValueToken(t) {
+      const s = String(t || "").trim();
+      // aceita 32 / 32,9 / 32,90 / 32.90
+      return /^\d+([.,]\d{1,2})?$/.test(s);
+    }
+
+    /**
+     * Entrada: texto com 1+ pedidos.
+     * - aceita 1 por linha, ou vários separados por espaço
+     * - aceita formato com meta por linha: "COD;VALOR;PAGAMENTO" ou "COD VALOR PAGAMENTO"
+     * Retorno: [{ code, valueRaw, payment }]
+     */
+    function parseCodesWithMeta(raw, defaultPay = "dinheiro", defaultValueRaw = "") {
+      const text = String(raw || "").trim();
+      if (!text) return [];
+
+      // se tem quebra de linha, respeita linhas; senão, pode ser tudo numa linha por espaço
+      const lines = text.includes("\n")
+        ? text.split(/\r?\n/g)
+        : [text];
+
+      const out = [];
+
+      for (const line0 of lines) {
+        const line = String(line0 || "").trim();
+        if (!line) continue;
+
+        // se usar ; ou | como separador, tratamos como "por linha"
+        const hasSep = /[;|]/.test(line);
+
+        if (hasSep) {
+          const parts = line.split(/[;|]/g).map(x => x.trim()).filter(Boolean);
+
+          const code = parts[0] || "";
+          let valueRaw = defaultValueRaw;
+          let payment = defaultPay;
+
+          for (let i = 1; i < parts.length; i++) {
+            const p = parts[i];
+            const pay = parsePayToken(p);
+            if (pay) { payment = pay; continue; }
+
+            if (isValueToken(p)) { valueRaw = p; continue; }
+          }
+
+          out.push({ code, valueRaw, payment });
+          continue;
+        }
+
+        // formato por espaços: pode ser "COD", "COD VALOR", "COD PAG", "COD VALOR PAG"
+        const tokens = line.split(/\s+/g).map(x => x.trim()).filter(Boolean);
+
+        // se tiver mais de um token e o primeiro não parece um código, ainda assim tentamos
+        // mas o mais importante é: se a pessoa colou "1234 5678 9999", vira 3 códigos
+        if (tokens.length >= 2 && tokens.every(t => /^\d{3,6}$/.test(t))) {
+          for (const t of tokens) {
+            out.push({ code: t, valueRaw: defaultValueRaw, payment: defaultPay });
+          }
+          continue;
+        }
+
+        const code = tokens[0] || "";
+        let valueRaw = defaultValueRaw;
+        let payment = defaultPay;
+
+        for (let i = 1; i < tokens.length; i++) {
+          const t = tokens[i];
+          const pay = parsePayToken(t);
+          if (pay) { payment = pay; continue; }
+          if (isValueToken(t)) { valueRaw = t; continue; }
+        }
+
+        out.push({ code, valueRaw, payment });
+      }
+
+      return out;
+    }
+
+
+    const PLATFORM = {
+      ifood: { key: "ifood", label: "iFood" },
+      anota: { key: "anota", label: "Anota" },
+      n99: { key: "99food", label: "99Food" }
+    };
+
+    function detectPlatformByCode(code) {
+      const c = String(code || "").trim();
+      if (/^\d{4}$/.test(c)) return PLATFORM.ifood;
+      if (/^\d{3}$/.test(c)) return PLATFORM.anota;
+      if (/^\d{6}$/.test(c)) return PLATFORM.n99;
+      return null;
+    }
+
+    function paymentLabel(v) {
+      const map = { dinheiro: "Dinheiro", online: "Online", cartao: "Cartão" };
+      return map[v] || v;
+    }
+
+    function fmtDateTime(ts) {
+      const d = new Date(ts);
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mi = String(d.getMinutes()).padStart(2, "0");
+      return `${dd}/${mm} ${hh}:${mi}`;
+    }
+
+    function dayKey(ts) {
+      const d = new Date(ts);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const da = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${da}`;
+    }
+
+    function fmtDayBr(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+    }
+
+    function parseValueToNumber(vRaw, vFmt) {
+      const base = String(vRaw || "").trim();
+      const s = base ? base : String(vFmt || "");
+      const cleaned = s.replace(/[^\d,\.]/g, "").replace(",", ".");
+      const n = Number(cleaned);
+      return isFinite(n) ? n : 0;
+    }
+
+    // =========================
+    // State + Storage
+    // =========================
+    const LS_KEY = "mm_board_v4_all_features";
+
+    let state = {
+      motoboys: [],
+      orders: [],
+      history: [],
+      laneDrafts: {}
+    };
+
+    // Undo (desfazer)
+    let undoSlot = null; // { expiresAt, undoFn, label }
+
+    function pushUndo(label, undoFn) {
+      undoSlot = {
+        label,
+        undoFn,
+        expiresAt: Date.now() + 10000
+      };
+
+      toast("warn", "Ação realizada", label, "DESFAZER", () => {
+        if (!undoSlot) return;
+        const fn = undoSlot.undoFn;
+        undoSlot = null;
+        try { fn(); } catch (e) { }
+      }, 10000);
+
+      setTimeout(() => {
+        if (undoSlot && Date.now() >= undoSlot.expiresAt) undoSlot = null;
+      }, 10100);
+    }
+
+    function save() {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { }
+
+      if (window.electronAPI?.saveBackup) {
+        clearTimeout(save.__t);
+        save.__t = setTimeout(() => {
+          try { window.electronAPI.saveBackup(state); } catch (e) { }
+        }, 400);
+      }
+    }
+
+    function ensureDefaults() {
+      if (!Array.isArray(state.motoboys)) state.motoboys = [];
+      if (!Array.isArray(state.orders)) state.orders = [];
+      if (!Array.isArray(state.history)) state.history = [];
+      if (!state.laneDrafts || typeof state.laneDrafts !== "object") state.laneDrafts = {};
+
+      // remove legado
+      state.motoboys = state.motoboys
+        .filter(m => m && typeof m === "object")
+        .map(m => ({
+          id: String(m.id || uid()),
+          name: String(m.name || "Motoboy").trim() || "Motoboy"
+        }))
+        .filter(m => m.id !== "unassigned" && m.name.toLowerCase() !== "sem motoboy");
+
+      const validIds = new Set(state.motoboys.map(m => m.id));
+
+      // drafts: remove órfãos
+      for (const k of Object.keys(state.laneDrafts)) {
+        if (!validIds.has(k)) delete state.laneDrafts[k];
+      }
+      // drafts: garantir por motoboy
+      for (const m of state.motoboys) {
+        if (!state.laneDrafts[m.id]) {
+          state.laneDrafts[m.id] = { open: false, codes: "", payment: "dinheiro", value: "" };
+        } else {
+          state.laneDrafts[m.id].payment ||= "dinheiro";
+          state.laneDrafts[m.id].codes ||= "";
+          state.laneDrafts[m.id].value ||= "";
+          state.laneDrafts[m.id].open = !!state.laneDrafts[m.id].open;
+        }
+      }
+
+      // se não tem motoboy, zera fila
+      if (validIds.size === 0) {
+        state.orders = [];
+      } else {
+        const fallbackId = state.motoboys[0].id;
+        state.orders = state.orders.map(o => {
+          const code = String(o.code || "").trim();
+          const info = detectPlatformByCode(code);
+          const wanted = String(o.motoboyId || "");
+          const fixedId = (!validIds.has(wanted)) ? fallbackId : wanted;
+
+          return {
+            id: String(o.id || uid()),
+            motoboyId: fixedId,
+            code,
+            payment: o.payment || "dinheiro",
+            valueRaw: o.valueRaw || "",
+            valueFmt: o.valueFmt || moneyBR(o.valueRaw || ""),
+            selected: !!o.selected,
+            createdAt: Number(o.createdAt || Date.now()),
+            platformKey: String(o.platformKey || (info ? info.key : "")),
+            platformLabel: String(o.platformLabel || (info ? info.label : ""))
+          };
+        }).filter(o => o.code.length > 0);
+      }
+
+      // normalize history
+      state.history = state.history.map(o => {
+        const code = String(o.code || "").trim();
+        const info = detectPlatformByCode(code);
+        const createdAt = Number(o.createdAt || Date.now());
+        const finalizedAt = Number(o.finalizedAt || createdAt);
+        return {
+          id: String(o.id || uid()),
+          code,
+          payment: o.payment || "dinheiro",
+          valueRaw: o.valueRaw || "",
+          valueFmt: o.valueFmt || moneyBR(o.valueRaw || ""),
+          createdAt,
+          finalizedAt,
+          platformKey: String(o.platformKey || (info ? info.key : "")),
+          platformLabel: String(o.platformLabel || (info ? info.label : ""))
+        };
+      }).filter(o => o.code.length > 0);
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") state = parsed;
+        }
+      } catch (e) { }
+
+      ensureDefaults();
+
+      if (window.electronAPI?.loadBackup) {
+        window.electronAPI.loadBackup()
+          .then((res) => {
+            if (!res || !res.ok || !res.state) return;
+            state = res.state;
+            ensureDefaults();
+            renderAll();
+          })
+          .catch(() => { });
+      }
+    }
+
+    // =========================
+    // Views
+    // =========================
+    function setView(name) {
+      const views = ["viewBoard", "viewStats", "viewHistory"];
+      for (const v of views) {
+        const el = document.getElementById(v);
+        if (!el) continue;
+        el.classList.toggle("active", v === name);
+      }
+      if (name === "viewStats") renderStats();
+      if (name === "viewHistory") renderHistory();
+      if (name === "viewBoard") renderBoard();
+    }
+
+    // =========================
+    // Board Rendering
+    // =========================
+    function counts() {
+      const total = state.orders.length;
+      const selected = state.orders.filter(o => o.selected).length;
+      $("#totalCount").textContent = total;
+      $("#selCount").textContent = selected;
+    }
+
+    function laneOrders(mid) {
+      return state.orders
+        .filter(o => o.motoboyId === mid)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    function getDraft(mid) {
+      if (!state.laneDrafts[mid]) state.laneDrafts[mid] = { open: false, codes: "", payment: "dinheiro", value: "" };
+      return state.laneDrafts[mid];
+    }
+
+    function renderBoard() {
+      const board = $("#board");
+      board.innerHTML = "";
+
+      if (!state.motoboys.length) {
+        board.innerHTML = `<div class="emptyBoard">Crie um motoboy à esquerda para começar.</div>`;
+        counts();
+        return;
+      }
+
+      for (const m of state.motoboys) {
+        const orders = laneOrders(m.id);
+        const draft = getDraft(m.id);
+
+        const lane = document.createElement("div");
+        lane.className = "lane";
+        lane.innerHTML = `
+          <div class="laneTop">
+            <div class="laneTitle">
+              <strong>${escapeHtml(m.name)}</strong>
+              <span>${orders.length} pedido(s)</span>
+            </div>
+            <div class="laneBtns">
+              <button class="miniBtn red" data-act="delLane" data-mid="${m.id}" title="Excluir motoboy">–</button>
+              <button class="miniBtn gold" data-act="toggleAdd" data-mid="${m.id}" title="Adicionar pedidos">+</button>
+            </div>
+          </div>
+
+          <div class="laneBody">
+            ${draft.open ? `
+              <div class="draft">
+                <div class="draftTop">
+                  <div style="font-weight:900">Adicionar pedidos</div>
+                  <button class="miniBtn" data-act="clearDraft" data-mid="${m.id}" title="Limpar campos">×</button>
+                </div>
+
+                <textarea data-k="codes" data-mid="${m.id}" placeholder="Cole 1 ou mais códigos (um por linha ou espaço)">${escapeHtml(draft.codes || "")}</textarea>
+
+                <div class="row" style="margin-top:10px">
+                  <input data-k="value" data-mid="${m.id}" placeholder="Valor (opcional) ex: 32,90" value="${escapeHtml(draft.value || "")}" />
+                </div>
+
+                <div class="draftTop" style="margin-top:10px">
+                  <div style="font-weight:900; color: rgba(255,255,255,.75)">Pagamento</div>
+                  <div class="seg">
+                    <button data-act="pay" data-mid="${m.id}" data-pay="dinheiro" class="${draft.payment === "dinheiro" ? "active" : ""}" type="button">Dinheiro</button>
+                    <button data-act="pay" data-mid="${m.id}" data-pay="online" class="${draft.payment === "online" ? "active" : ""}" type="button">Online</button>
+                    <button data-act="pay" data-mid="${m.id}" data-pay="cartao" class="${draft.payment === "cartao" ? "active" : ""}" type="button">Cartão</button>
+                  </div>
+                </div>
+
+                <div class="draftActions">
+                  <button class="btn" data-act="toggleAdd" data-mid="${m.id}" type="button">Fechar</button>
+                  <button class="btn primary" data-act="addHere" data-mid="${m.id}" type="button">Adicionar</button>
+                </div>
+
+                <div style="margin-top:8px; color: rgba(255,255,255,.55); font-size:12px; font-weight:700">
+                  Dica: Ctrl+Enter dentro da caixa para adicionar
+                </div>
+              </div>
+            ` : ``}
+
+            ${orders.length ? orders.map(o => `
+              <div class="order">
+                <div class="tools">
+                  <input type="checkbox" data-act="toggleSel" data-id="${o.id}" ${o.selected ? "checked" : ""} />
+                </div>
+                <div class="meta">
+                  <div class="code">${escapeHtml(o.code)}</div>
+                  <div class="sub">
+                    <span class="tag gold">${escapeHtml(o.platformLabel || "")}</span>
+                    <span class="tag">${escapeHtml(paymentLabel(o.payment))}</span>
+                    ${o.valueFmt ? `<span class="tag">${escapeHtml(o.valueFmt)}</span>` : ``}
+                  </div>
+                </div>
+                <button class="trash" data-act="delOrder" data-id="${o.id}" title="Excluir">🗑</button>
+              </div>
+            `).join("") : `
+              <div style="padding: 14px; color: rgba(255,255,255,.55); font-weight:800">
+                Sem pedidos aqui ainda.
+              </div>
+            `}
+          </div>
+        `;
+
+        board.appendChild(lane);
+      }
+
+      counts();
+    }
+
+    // =========================
+    // Board Actions
+    // =========================
+    function addMotoboy() {
+      const name = $("#motoboyName").value.trim();
+      if (!name) {
+        toast("bad", "Nome vazio", "Digite o nome do motoboy.");
+        return;
+      }
+      const exists = state.motoboys.some(m => m.name.toLowerCase() === name.toLowerCase());
+      if (exists) {
+        toast("bad", "Já existe", "Já tem um motoboy com esse nome.");
+        return;
+      }
+
+      const prev = deepClone(state);
+
+      const m = { id: uid(), name };
+      state.motoboys.push(m);
+      state.laneDrafts[m.id] = { open: true, codes: "", payment: "dinheiro", value: "" };
+      $("#motoboyName").value = "";
+      save();
+      renderBoard();
+      toast("ok", "Motoboy adicionado", `${name} ganhou uma coluna própria.`);
+
+      pushUndo(`Motoboy "${name}" adicionado.`, () => {
+        state = prev;
+        ensureDefaults();
+        save();
+        renderAll();
+      });
+
+      // atualiza select do Quick Add
+      refreshQuickMotoboySelect();
+    }
+
+    async function deleteMotoboy(mid) {
+      const m = state.motoboys.find(x => x.id === mid);
+      if (!m) return;
+
+      const pedidosDoMotoboy = state.orders.filter(o => o.motoboyId === mid);
+      const qtdPedidos = pedidosDoMotoboy.length;
+
+      let mensagem = `Tem certeza que deseja remover o motoboy “${m.name}”?`;
+      if (qtdPedidos > 0) {
+        mensagem += `\n\n⚠️ Existem ${qtdPedidos} pedido(s) desse motoboy.\nEles serão APAGADOS junto com o motoboy.`;
+      }
+
+      const ok = await confirmarExclusao({
+        titulo: "Confirmar remoção",
+        mensagem,
+        okText: "Remover",
+        cancelText: "Cancelar",
+        danger: true
+      });
+      if (!ok) return;
+
+      const prev = deepClone(state);
+
+      // Remove pedidos desse motoboy (SEM mover)
+      state.orders = state.orders.filter(o => o.motoboyId !== mid);
+      // Remove motoboy
+      state.motoboys = state.motoboys.filter(x => x.id !== mid);
+      // Remove draft
+      delete state.laneDrafts[mid];
+
+      save();
+      renderBoard();
+
+      toast("bad", "Motoboy removido", qtdPedidos ? `${qtdPedidos} pedido(s) foram apagados junto.` : "Sem pedidos para apagar.");
+
+      pushUndo(`Remoção desfeita: "${m.name}" voltou.`, () => {
+        state = prev;
+        ensureDefaults();
+        save();
+        renderAll();
+        refreshQuickMotoboySelect();
+      });
+
+      refreshQuickMotoboySelect();
+    }
+
+    async function clearAll() {
+      const ok = await confirmarExclusao({
+        titulo: "Apagar tudo?",
+        mensagem: "Isso vai remover TODOS os motoboys, pedidos e histórico.\n\n⚠️ Você pode desfazer por 10 segundos.",
+        okText: "Apagar tudo",
+        cancelText: "Cancelar",
+        danger: true
+      });
+      if (!ok) return;
+
+      const prev = deepClone(state);
+
+      state = { motoboys: [], orders: [], history: [], laneDrafts: {} };
+      save();
+      renderAll();
+      toast("bad", "Tudo apagado", "Motoboys, pedidos e histórico foram removidos.");
+
+      pushUndo("Desfazer: restaurar tudo que foi apagado.", () => {
+        state = prev;
+        ensureDefaults();
+        save();
+        renderAll();
+        refreshQuickMotoboySelect();
+      });
+
+      refreshQuickMotoboySelect();
+    }
+
+    function toggleLaneAdd(mid) {
+      const d = getDraft(mid);
+      d.open = !d.open;
+      save();
+      renderBoard();
+    }
+
+    function setLanePayment(mid, pay) {
+      const d = getDraft(mid);
+      d.payment = pay;
+      save();
+      renderBoard();
+    }
+
+    function setLaneField(mid, key, value) {
+      const d = getDraft(mid);
+      d[key] = value;
+      save();
+    }
+
+    function clearLaneDraft(mid) {
+      const d = getDraft(mid);
+      d.codes = "";
+      d.value = "";
+      save();
+      renderBoard();
+      toast("", "Limpo", "Campos da coluna limpos.");
+    }
+
+    function addOrdersToMotoboy(mid, codesStrOverride, payOverride, valueOverride) {
+      const d = getDraft(mid);
+      const m = state.motoboys.find(x => x.id === mid);
+
+      const codesStr = (codesStrOverride != null) ? codesStrOverride : (d.codes || "");
+      const paymentDefault = (payOverride != null) ? payOverride : (d.payment || "dinheiro");
+      const valueDefault = (valueOverride != null) ? valueOverride : (d.value || "");
+
+      // Cada linha pode ter seu próprio pagamento/valor
+      const entries = parseCodesWithMeta(codesStr, paymentDefault, valueDefault);
+
+      if (!entries.length) {
+        toast("bad", "Sem códigos", "Cole pelo menos um código.");
+        return 0;
+      }
+
+      const prev = deepClone(state);
+
+      let added = 0;
+      let invalid = 0;
+
+      for (const ent of entries) {
+        const code = String(ent.code || "").trim();
+        const info = detectPlatformByCode(code);
+
+        if (!info) {
+          invalid++;
+          continue;
+        }
+
+        const payment = ent.payment || paymentDefault;
+        const valueRaw = ent.valueRaw || "";
+        const valueFmt = moneyBR(valueRaw);
+
+        state.orders.unshift({
+          id: uid(),
+          motoboyId: mid,
+          code,
+          payment,
+          valueRaw,
+          valueFmt,
+          selected: false,
+          createdAt: Date.now(),
+          platformKey: info.key,
+          platformLabel: info.label
+        });
+
+        added++;
+      }
+
+      if (added === 0) {
+        toast("warn", "Nada adicionado", invalid ? `Todos inválidos (${invalid}). Use 3/4/6 dígitos.` : "Nenhum pedido válido.");
+        return 0;
+      }
+
+      // Se estava usando a coluna (não override), limpa e fecha a área de adicionar
+      if (codesStrOverride == null) {
+        d.codes = "";
+        d.value = "";
+        d.open = false;
+      }
+
+      save();
+      renderBoard();
+
+      toast("ok", "Pedidos adicionados",
+        `${added} pedido(s) em ${m ? m.name : "motoboy"}${invalid ? ` • ${invalid} inválido(s) ignorado(s)` : ""}.`
+      );
+
+      pushUndo(`Desfazer: remover ${added} pedido(s) adicionados.`, () => {
+        state = prev;
+        ensureDefaults();
+        save();
+        renderAll();
+      });
+
+      return added;
+    }
+
+
+    async function delOrder(id) {
+      const o = state.orders.find(x => x.id === id);
+      if (!o) return;
+
+      const motoboy = state.motoboys.find(m => m.id === o.motoboyId);
+
+      const ok = await confirmarExclusao({
+        titulo: "Apagar pedido?",
+        mensagem: `Tem certeza que deseja apagar o pedido ${o.code}?\n\nMotoboy: ${motoboy ? motoboy.name : "—"}`,
+        okText: "Apagar",
+        cancelText: "Cancelar",
+        danger: true
+      });
+      if (!ok) return;
+
+      const prev = deepClone(state);
+
+      state.orders = state.orders.filter(x => x.id !== id);
+      save();
+      renderBoard();
+      toast("bad", "Excluído", `Pedido ${o.code} removido.`);
+
+      pushUndo(`Desfazer: restaurar o pedido ${o.code}.`, () => {
+        state = prev;
+        ensureDefaults();
+        save();
+        renderAll();
+      });
+    }
+
+    function toggleSel(id, checked) {
+      const o = state.orders.find(x => x.id === id);
+      if (!o) return;
+      o.selected = !!checked;
+      save();
+      counts();
+    }
+
+    function setAllSelected(v) {
+      for (const o of state.orders) o.selected = !!v;
+      save();
+      renderBoard();
+    }
+
+    async function finalizeSelected() {
+      const selected = state.orders.filter(o => o.selected);
+      if (!selected.length) {
+        toast("warn", "Nada selecionado", "Marque pelo menos um pedido.");
+        return;
+      }
+
+      const ok = await confirmarExclusao({
+        titulo: "Finalizar selecionados?",
+        mensagem: `Isso vai remover ${selected.length} pedido(s) da fila e enviar para o histórico.\n\n⚠️ Você pode desfazer por 10 segundos.`,
+        okText: "Finalizar",
+        cancelText: "Cancelar",
+        danger: false
+      });
+      if (!ok) return;
+
+      const prev = deepClone(state);
+
+      const now = Date.now();
+
+      // manda pro histórico (geral, sem motoboy)
+      for (const o of selected) {
+        state.history.unshift({
+          id: o.id || uid(),
+          code: o.code,
+          payment: o.payment || "dinheiro",
+          valueRaw: o.valueRaw || "",
+          valueFmt: o.valueFmt || moneyBR(o.valueRaw || ""),
+          createdAt: o.createdAt || now,
+          finalizedAt: now,
+          platformKey: o.platformKey || "",
+          platformLabel: o.platformLabel || ""
+        });
+      }
+
+      const set = new Set(selected.map(o => o.id));
+      state.orders = state.orders.filter(o => !set.has(o.id));
+
+      save();
+      renderBoard();
+
+      toast("ok", "Finalizado", `${selected.length} pedido(s) enviados para o histórico.`);
+
+      pushUndo(`Desfazer: voltar ${selected.length} pedido(s) pra fila.`, () => {
+        state = prev;
+        ensureDefaults();
+        save();
+        renderAll();
+      });
+    }
+
+    // =========================
+    // Backup (inclui history)
+    // =========================
+    const BACKUP_META = { app: "motoboy_manager", schema: 2 };
+
+    function buildBackupPayload() {
+      return { meta: BACKUP_META, exportedAt: new Date().toISOString(), state };
+    }
+
+    function downloadJson(filename, obj) {
+      const json = JSON.stringify(obj, null, 2);
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 200);
+    }
+
+    function sanitizeImported(raw) {
+      const incoming = (raw && raw.state && typeof raw.state === "object") ? raw.state : raw;
+      if (!incoming || typeof incoming !== "object") throw new Error("Arquivo inválido.");
+
+      const next = {
+        motoboys: Array.isArray(incoming.motoboys) ? incoming.motoboys : [],
+        orders: Array.isArray(incoming.orders) ? incoming.orders : [],
+        history: Array.isArray(incoming.history) ? incoming.history : [],
+        laneDrafts: (incoming.laneDrafts && typeof incoming.laneDrafts === "object") ? incoming.laneDrafts : {}
+      };
+
+      // aplica no state e normaliza tudo
+      const tmp = state;
+      state = next;
+      ensureDefaults();
+      const out = state;
+      state = tmp;
+      return out;
+    }
+
+    function mergeState(current, incoming) {
+      const out = deepClone(current);
+
+      out.motoboys = Array.isArray(out.motoboys) ? out.motoboys : [];
+      out.orders = Array.isArray(out.orders) ? out.orders : [];
+      out.history = Array.isArray(out.history) ? out.history : [];
+      out.laneDrafts = (out.laneDrafts && typeof out.laneDrafts === "object") ? out.laneDrafts : {};
+
+      // motoboys merge por nome
+      const byName = new Map(out.motoboys.map(m => [m.name.toLowerCase(), m.id]));
+      const idMap = new Map();
+
+      for (const m of incoming.motoboys) {
+        const key = String(m.name || "").toLowerCase().trim();
+        if (!key) continue;
+
+        if (byName.has(key)) {
+          idMap.set(m.id, byName.get(key));
+        } else {
+          out.motoboys.push({ id: m.id, name: m.name });
+          byName.set(key, m.id);
+          idMap.set(m.id, m.id);
+        }
+      }
+
+      const outIds = new Set(out.motoboys.map(m => m.id));
+      const fallbackId = out.motoboys[0]?.id || null;
+
+      // orders dedup por (motoboyId + code)
+      const okKey = (o) => `${o.motoboyId}::${o.code}`;
+      const existingOrders = new Set(out.orders.map(okKey));
+
+      let addedOrders = 0;
+      for (const o of incoming.orders) {
+        const wanted = idMap.get(o.motoboyId) || (outIds.has(o.motoboyId) ? o.motoboyId : fallbackId);
+        if (!wanted) continue;
+
+        const code = String(o.code || "").trim();
+        const info = detectPlatformByCode(code);
+        if (!info) continue;
+
+        const order = {
+          id: uid(),
+          motoboyId: wanted,
+          code,
+          payment: o.payment || "dinheiro",
+          valueRaw: o.valueRaw || "",
+          valueFmt: o.valueFmt || moneyBR(o.valueRaw || ""),
+          selected: false,
+          createdAt: Date.now(),
+          platformKey: o.platformKey || info.key,
+          platformLabel: o.platformLabel || info.label
+        };
+
+        const k = okKey(order);
+        if (!existingOrders.has(k)) {
+          out.orders.unshift(order);
+          existingOrders.add(k);
+          addedOrders++;
+        }
+      }
+
+      // history dedup por (code + finalizedAt)
+      const hk = (h) => `${h.code}::${h.finalizedAt || h.createdAt || 0}`;
+      const existingHist = new Set(out.history.map(hk));
+      let addedHist = 0;
+
+      for (const h of incoming.history) {
+        const code = String(h.code || "").trim();
+        const info = detectPlatformByCode(code);
+        if (!code) continue;
+
+        const item = {
+          id: uid(),
+          code,
+          payment: h.payment || "dinheiro",
+          valueRaw: h.valueRaw || "",
+          valueFmt: h.valueFmt || moneyBR(h.valueRaw || ""),
+          createdAt: Number(h.createdAt || Date.now()),
+          finalizedAt: Number(h.finalizedAt || h.createdAt || Date.now()),
+          platformKey: h.platformKey || (info ? info.key : ""),
+          platformLabel: h.platformLabel || (info ? info.label : "")
+        };
+
+        const k2 = hk(item);
+        if (!existingHist.has(k2)) {
+          out.history.unshift(item);
+          existingHist.add(k2);
+          addedHist++;
+        }
+      }
+
+      // drafts
+      for (const m of out.motoboys) {
+        if (!out.laneDrafts[m.id]) out.laneDrafts[m.id] = { open: false, codes: "", payment: "dinheiro", value: "" };
+      }
+
+      return { out, addedOrders, addedHist };
+    }
+
+    function exportBackup() {
+      const payload = buildBackupPayload();
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      downloadJson(`motoboy-backup-${stamp}.json`, payload);
+      toast("ok", "Backup exportado", "Arquivo .json baixado com sucesso.");
+    }
+
+    function importBackup(mode) {
+      const inp = $("#backupFile");
+      inp.value = "";
+      inp.dataset.mode = mode;
+      inp.click();
+    }
+
+    $("#backupFile").addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const mode = e.target.dataset.mode || "replace";
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        try {
+          const raw = JSON.parse(String(reader.result || ""));
+          const imported = sanitizeImported(raw);
+
+          const prev = deepClone(state);
+
+          if (mode === "merge") {
+            const { out, addedOrders, addedHist } = mergeState(state, imported);
+            state = out;
+            ensureDefaults();
+            save();
+            renderAll();
+            toast("ok", "Backup mesclado", `Novos pedidos: ${addedOrders} • Históricos: ${addedHist}`);
+
+            pushUndo("Desfazer: voltar estado antes da mesclagem.", () => {
+              state = prev;
+              ensureDefaults();
+              save();
+              renderAll();
+              refreshQuickMotoboySelect();
+            });
+          } else {
+            state = imported;
+            ensureDefaults();
+            save();
+            renderAll();
+            toast("ok", "Backup importado", "Substituiu tudo com sucesso.");
+
+            pushUndo("Desfazer: voltar estado antes do import.", () => {
+              state = prev;
+              ensureDefaults();
+              save();
+              renderAll();
+              refreshQuickMotoboySelect();
+            });
+          }
+
+          refreshQuickMotoboySelect();
+        } catch (err) {
+          toast("bad", "Falha no backup", err?.message || "Arquivo inválido.");
+        }
+      };
+
+      reader.onerror = () => toast("bad", "Falha no backup", "Não consegui ler o arquivo.");
+      reader.readAsText(file, "utf-8");
+    });
+
+    // =========================
+    // Stats (geral): fila + histórico
+    // =========================
+    let statsRange = 30;
+
+    function allOrdersForStats() {
+      return [...state.orders, ...state.history];
+    }
+
+    function computeStats(range) {
+      const list = allOrdersForStats();
+
+      let cutoff = 0;
+      if (range !== "all") {
+        const days = Number(range);
+        cutoff = Date.now() - days * 86400000;
+      }
+
+      const byDay = new Map();
+      const byPlatform = new Map();
+      let total = 0;
+      let totalValue = 0;
+      let withValueCount = 0;
+
+      for (const o of list) {
+        const ts = Number(o.createdAt || Date.now());
+        if (cutoff && ts < cutoff) continue;
+
+        total++;
+        const v = parseValueToNumber(o.valueRaw, o.valueFmt);
+        if (v > 0) withValueCount++;
+        totalValue += v;
+
+        const dk = dayKey(ts);
+        if (!byDay.has(dk)) byDay.set(dk, { day: dk, count: 0, value: 0 });
+        const row = byDay.get(dk);
+        row.count += 1;
+        row.value += v;
+
+        const pk = String(o.platformKey || "");
+        if (pk) {
+          byPlatform.set(pk, (byPlatform.get(pk) || 0) + 1);
+        }
+      }
+
+      const daysArr = Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
+      const maxCount = Math.max(1, ...daysArr.map(d => d.count));
+
+      const todayKey = dayKey(Date.now());
+      const today = byDay.get(todayKey)?.count || 0;
+
+      // semana atual vs passada (7 dias)
+      const now = Date.now();
+      const c1 = now - 7 * 86400000;
+      const c2 = now - 14 * 86400000;
+
+      let wkNowCount = 0, wkNowValue = 0, wkPrevCount = 0, wkPrevValue = 0;
+
+      for (const o of allOrdersForStats()) {
+        const ts = Number(o.createdAt || Date.now());
+        const v = parseValueToNumber(o.valueRaw, o.valueFmt);
+
+        if (ts >= c1) {
+          wkNowCount++; wkNowValue += v;
+        } else if (ts >= c2 && ts < c1) {
+          wkPrevCount++; wkPrevValue += v;
+        }
+      }
+
+      const avgTicket = (withValueCount > 0) ? (totalValue / withValueCount) : 0;
+
+      return {
+        total,
+        totalValue,
+        today,
+        daysArr,
+        maxCount,
+        byPlatform: Array.from(byPlatform.entries()).sort((a, b) => b[1] - a[1]),
+        avgTicket,
+        wkNowCount, wkNowValue, wkPrevCount, wkPrevValue
+      };
+    }
+
+    function renderStats() {
+      const root = $("#statsRoot");
+      const r = (statsRange === "all") ? "all" : Number(statsRange);
+
+      const {
+        total, totalValue, today, daysArr, maxCount,
+        byPlatform, avgTicket,
+        wkNowCount, wkNowValue, wkPrevCount, wkPrevValue
+      } = computeStats(r);
+
+      const totalValueFmt = totalValue > 0
+        ? totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+        : "—";
+
+      const avgFmt = avgTicket > 0
+        ? avgTicket.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+        : "—";
+
+      const wkNowVF = wkNowValue > 0 ? wkNowValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+      const wkPrevVF = wkPrevValue > 0 ? wkPrevValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+
+      const deltaCount = wkPrevCount ? Math.round(((wkNowCount - wkPrevCount) / wkPrevCount) * 100) : (wkNowCount ? 100 : 0);
+      const deltaValue = wkPrevValue ? Math.round(((wkNowValue - wkPrevValue) / wkPrevValue) * 100) : (wkNowValue ? 100 : 0);
+
+      root.innerHTML = `
+        <div class="statsGrid">
+          <div class="kpi">
+            <div class="kTitle">Total de pedidos</div>
+            <div class="kValue">${total}</div>
+            <div class="kSub">Fila + Histórico (período)</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kTitle">Pedidos hoje</div>
+            <div class="kValue">${today}</div>
+            <div class="kSub">Baseado em createdAt</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kTitle">Valor somado</div>
+            <div class="kValue">${totalValueFmt}</div>
+            <div class="kSub">Somando valores informados</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kTitle">Ticket médio</div>
+            <div class="kValue">${avgFmt}</div>
+            <div class="kSub">Média só dos pedidos com valor</div>
+          </div>
+        </div>
+
+        <div class="miniGrid2">
+          <div class="statsCard">
+            <div style="font-weight:900; margin-bottom:10px">Plataformas (contagem)</div>
+            ${byPlatform.length ? byPlatform.map(([k, c]) => {
+        const label = (k === "ifood") ? "iFood" : (k === "anota") ? "Anota" : (k === "99food") ? "99Food" : k;
+        return `
+                <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,.06)">
+                  <div style="font-weight:900">${label}</div>
+                  <div style="font-weight:900; color: rgba(255,255,255,.8)">${c}</div>
+                </div>
+              `;
+      }).join("") : `<div style="color: rgba(255,255,255,.6); font-weight:800">Sem dados.</div>`}
+          </div>
+
+          <div class="statsCard">
+            <div style="font-weight:900; margin-bottom:10px">Semana atual vs passada</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+              <div style="background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:12px">
+                <div style="color: rgba(255,255,255,.65); font-weight:900; font-size:12px">Últimos 7 dias</div>
+                <div style="margin-top:6px; font-weight:900; font-size:18px">${wkNowCount} pedidos</div>
+                <div style="margin-top:4px; font-weight:900; color: rgba(255,255,255,.85)">${wkNowVF}</div>
+              </div>
+              <div style="background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:12px">
+                <div style="color: rgba(255,255,255,.65); font-weight:900; font-size:12px">7 dias anteriores</div>
+                <div style="margin-top:6px; font-weight:900; font-size:18px">${wkPrevCount} pedidos</div>
+                <div style="margin-top:4px; font-weight:900; color: rgba(255,255,255,.85)">${wkPrevVF}</div>
+              </div>
+            </div>
+            <div style="margin-top:10px; color: rgba(255,255,255,.75); font-weight:900">
+              Diferença: ${deltaCount >= 0 ? "+" : ""}${deltaCount}% pedidos • ${deltaValue >= 0 ? "+" : ""}${deltaValue}% valor
+            </div>
+          </div>
+        </div>
+
+        <div class="statsCard">
+          <div style="font-weight:900; margin-bottom:10px">Pedidos por dia</div>
+          ${daysArr.length ? daysArr.map(d => {
+        const pct = Math.round((d.count / maxCount) * 100);
+        const v = d.value > 0 ? d.value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+        return `
+              <div class="dayRow">
+                <div class="dayDate">${fmtDayBr(d.day)}</div>
+                <div class="barWrap"><div class="bar" style="width:${pct}%"></div></div>
+                <div class="dayCount">${d.count}</div>
+                <div class="dayValue">${v}</div>
+              </div>
+            `;
+      }).join("") : `<div style="color: rgba(255,255,255,.6); font-weight:800">Sem dados no período.</div>`}
+        </div>
+      `;
+    }
+
+    // =========================
+    // History (filtros + export csv)
+    // =========================
+    function getHistoryFilters() {
+      const search = String($("#histSearch").value || "").trim();
+      const platform = String($("#histPlatform").value || "all");
+      const range = String($("#histRange").value || "30");
+      return { search, platform, range };
+    }
+
+    function filterHistory() {
+      const { search, platform, range } = getHistoryFilters();
+
+      let cutoff = 0;
+      if (range !== "all") {
+        const days = Number(range);
+        cutoff = Date.now() - days * 86400000;
+      }
+
+      let list = [...state.history].sort((a, b) => (b.finalizedAt || 0) - (a.finalizedAt || 0));
+
+      if (cutoff) {
+        list = list.filter(h => Number(h.finalizedAt || h.createdAt || 0) >= cutoff);
+      }
+
+      if (platform !== "all") {
+        list = list.filter(h => String(h.platformKey || "") === platform);
+      }
+
+      if (search) {
+        const s = search.toLowerCase();
+        list = list.filter(h => String(h.code || "").toLowerCase().includes(s));
+      }
+
+      return list;
+    }
+
+    function renderHistory() {
+      const list = filterHistory();
+
+      // KPIs do histórico filtrado
+      let total = list.length;
+      let sum = 0;
+      let withValue = 0;
+      for (const h of list) {
+        const v = parseValueToNumber(h.valueRaw, h.valueFmt);
+        if (v > 0) withValue++;
+        sum += v;
+      }
+      const sumFmt = sum > 0 ? sum.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+      const avg = (withValue > 0) ? (sum / withValue) : 0;
+      const avgFmt = avg > 0 ? avg.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+
+      $("#historyKPIs").innerHTML = `
+        <div class="statsGrid" style="margin-top:0">
+          <div class="kpi">
+            <div class="kTitle">Pedidos (filtrados)</div>
+            <div class="kValue">${total}</div>
+            <div class="kSub">No período + filtros</div>
+          </div>
+          <div class="kpi">
+            <div class="kTitle">Valor somado</div>
+            <div class="kValue">${sumFmt}</div>
+            <div class="kSub">Somente valores informados</div>
+          </div>
+          <div class="kpi">
+            <div class="kTitle">Com valor</div>
+            <div class="kValue">${withValue}</div>
+            <div class="kSub">Pedidos que têm valor</div>
+          </div>
+          <div class="kpi">
+            <div class="kTitle">Ticket médio</div>
+            <div class="kValue">${avgFmt}</div>
+            <div class="kSub">Só dos pedidos com valor</div>
+          </div>
+        </div>
+      `;
+
+      const root = $("#historyList");
+      root.innerHTML = "";
+
+      if (!list.length) {
+        root.innerHTML = `<div class="emptyBoard">Sem histórico com esses filtros.</div>`;
+        return;
+      }
+
+      // agrupa por dia
+      let lastDay = "";
+      for (const h of list) {
+        const ts = Number(h.finalizedAt || h.createdAt || Date.now());
+        const dk = dayKey(ts);
+        if (dk !== lastDay) {
+          const day = document.createElement("div");
+          day.className = "hDay";
+          day.textContent = fmtDayBr(dk);
+          root.appendChild(day);
+          lastDay = dk;
+        }
+
+        const item = document.createElement("div");
+        item.className = "hItem";
+
+        const v = parseValueToNumber(h.valueRaw, h.valueFmt);
+        const vFmt = v > 0 ? v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—";
+
+        item.innerHTML = `
+          <div class="hLeft">
+            <div class="hCode">${escapeHtml(h.code)}</div>
+            <div class="hMeta">
+              <span class="tag gold">${escapeHtml(h.platformLabel || "")}</span>
+              <span class="tag">${escapeHtml(paymentLabel(h.payment))}</span>
+              ${h.valueFmt ? `<span class="tag">${escapeHtml(h.valueFmt)}</span>` : ``}
+            </div>
+          </div>
+          <div class="hRight">
+            <div>${escapeHtml(vFmt)}</div>
+            <div class="time">${escapeHtml(fmtDateTime(ts))}</div>
+          </div>
+        `;
+        root.appendChild(item);
+      }
+    }
+
+    function clearHistoryFilters() {
+      $("#histSearch").value = "";
+      $("#histPlatform").value = "all";
+      $("#histRange").value = "30";
+      renderHistory();
+      toast("ok", "Filtros limpos", "Histórico voltou ao padrão.");
+    }
+
+    // CSV export (histórico filtrado)
+    function exportHistoryCSV() {
+      const list = filterHistory();
+
+      if (!list.length) {
+        toast("warn", "Sem dados", "Não há itens no histórico com esses filtros.");
+        return;
+      }
+
+      const header = ["finalizado_em", "codigo", "plataforma", "pagamento", "valor", "createdAt", "finalizedAt"];
+      const rows = [header.join(";")];
+
+      for (const h of list) {
+        const ts = Number(h.finalizedAt || h.createdAt || 0);
+        const dt = new Date(ts);
+        const finalStr = dt.toLocaleString("pt-BR");
+
+        const v = parseValueToNumber(h.valueRaw, h.valueFmt);
+        const vNum = v ? v.toFixed(2).replace(".", ",") : "";
+
+        const line = [
+          `"${finalStr}"`,
+          `"${String(h.code || "").replaceAll('"', '""')}"`,
+          `"${String(h.platformLabel || "").replaceAll('"', '""')}"`,
+          `"${String(paymentLabel(h.payment) || "").replaceAll('"', '""')}"`,
+          `"${vNum}"`,
+          `"${Number(h.createdAt || "")}"`,
+          `"${Number(h.finalizedAt || "")}"`,
+        ].join(";");
+
+        rows.push(line);
+      }
+
+      const csv = rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `historico-${stamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 200);
+
+      toast("ok", "CSV exportado", `Baixado: ${list.length} linha(s).`);
+    }
+
+    // =========================
+    // Confirm Modal
+    // =========================
+    function confirmarExclusao(opts = {}) {
+      const overlay = document.getElementById("confirmOverlay");
+      const titleEl = document.getElementById("confirmTitle");
+      const msgEl = document.getElementById("confirmMessage");
+      const okBtn = document.getElementById("confirmOkBtn");
+      const cancelBtn = document.getElementById("confirmCancelBtn");
+      const iconEl = document.getElementById("confirmIcon");
+
+      const {
+        titulo = "Confirmar",
+        mensagem = "Tem certeza?",
+        okText = "Confirmar",
+        cancelText = "Cancelar",
+        danger = true
+      } = opts;
+
+      titleEl.textContent = titulo;
+      msgEl.textContent = mensagem;
+      okBtn.textContent = okText;
+      cancelBtn.textContent = cancelText;
+
+      iconEl.textContent = danger ? "!" : "i";
+      iconEl.style.background = danger ? "rgba(255,95,86,.14)" : "rgba(245,197,66,.12)";
+      iconEl.style.borderColor = danger ? "rgba(255,95,86,.28)" : "rgba(245,197,66,.35)";
+      iconEl.style.color = danger ? "#ffb5b0" : "var(--primary)";
+
+      overlay.classList.remove("hidden");
+      overlay.setAttribute("aria-hidden", "false");
+
+      return new Promise((resolve) => {
+        const cleanup = () => {
+          overlay.classList.add("hidden");
+          overlay.setAttribute("aria-hidden", "true");
+          okBtn.removeEventListener("click", onOk);
+          cancelBtn.removeEventListener("click", onCancel);
+          overlay.removeEventListener("click", onOverlay);
+          document.removeEventListener("keydown", onKey);
+        };
+
+        const onOk = () => { cleanup(); resolve(true); };
+        const onCancel = () => { cleanup(); resolve(false); };
+        const onOverlay = (e) => { if (e.target === overlay) onCancel(); };
+        const onKey = (e) => {
+          if (e.key === "Escape") onCancel();
+          if (e.key === "Enter") onOk();
+        };
+
+        okBtn.addEventListener("click", onOk);
+        cancelBtn.addEventListener("click", onCancel);
+        overlay.addEventListener("click", onOverlay);
+        document.addEventListener("keydown", onKey);
+
+        setTimeout(() => cancelBtn.focus(), 0);
+      });
+    }
+
+    // =========================
+    // Quick Add Modal
+    // =========================
+    let quickPay = "dinheiro";
+
+    function refreshQuickMotoboySelect() {
+      const sel = $("#quickMotoboy");
+      if (!sel) return;
+
+      sel.innerHTML = "";
+
+      if (!state.motoboys.length) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "Crie um motoboy primeiro";
+        sel.appendChild(opt);
+        sel.disabled = true;
+        return;
+      }
+
+      sel.disabled = false;
+      for (const m of state.motoboys) {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.name;
+        sel.appendChild(opt);
+      }
+    }
+
+    function setQuickPay(pay) {
+      quickPay = pay;
+      const seg = $("#quickPaySeg");
+      if (!seg) return;
+      for (const b of seg.querySelectorAll("button[data-pay]")) {
+        b.classList.toggle("active", b.getAttribute("data-pay") === pay);
+      }
+    }
+
+    function openQuick() {
+      refreshQuickMotoboySelect();
+      setQuickPay("dinheiro");
+      $("#quickValue").value = "";
+      $("#quickCodes").value = "";
+
+      const ov = $("#quickOverlay");
+      ov.classList.remove("hidden");
+      ov.setAttribute("aria-hidden", "false");
+
+      setTimeout(() => {
+        if (state.motoboys.length) $("#quickCodes").focus();
+        else $("#motoboyName").focus();
+      }, 0);
+    }
+
+    function closeQuick() {
+      const ov = $("#quickOverlay");
+      ov.classList.add("hidden");
+      ov.setAttribute("aria-hidden", "true");
+    }
+
+    function doQuickAdd() {
+      if (!state.motoboys.length) {
+        toast("bad", "Sem motoboy", "Crie um motoboy primeiro.");
+        closeQuick();
+        return;
+      }
+      const mid = $("#quickMotoboy").value;
+      const codes = $("#quickCodes").value;
+      const value = $("#quickValue").value;
+
+      const added = addOrdersToMotoboy(mid, codes, quickPay, value);
+      if (added > 0) closeQuick();
+    }
+
+    // =========================
+    // Events / Wiring
+    // =========================
+    function renderAll() {
+      // só renderiza o view ativo
+      if ($("#viewBoard").classList.contains("active")) renderBoard();
+      if ($("#viewStats").classList.contains("active")) renderStats();
+      if ($("#viewHistory").classList.contains("active")) renderHistory();
+      counts();
+    }
+
+    function wire() {
+      // Electron buttons
+      on("#btnMin", "click", () => {
+        if (window.electronAPI?.minimize) return window.electronAPI.minimize();
+        toast("", "Minimizar", "No navegador, não dá pra minimizar pela página.");
+      });
+      on("#btnMax", "click", () => {
+        if (window.electronAPI?.maximize) return window.electronAPI.maximize();
+        toast("", "Maximizar", "No navegador, não dá pra maximizar pela página.");
+      });
+      on("#btnClose", "click", () => {
+        if (window.electronAPI?.close) return window.electronAPI.close();
+        toast("bad", "Fechar", "No navegador, feche a aba/janela.");
+      });
+
+      // Left panel
+      on("#btnAddMotoboy", "click", addMotoboy);
+      on("#motoboyName", "keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); addMotoboy(); }
+      });
+      on("#btnClearAll", "click", clearAll);
+
+      on("#btnExportBackup", "click", exportBackup);
+      on("#btnImportBackup", "click", () => importBackup("replace"));
+      on("#btnMergeBackup", "click", () => importBackup("merge"));
+
+      // Board actions
+      on("#btnSelectAll", "click", () => setAllSelected(true));
+      on("#btnUnselectAll", "click", () => setAllSelected(false));
+      on("#btnDispatch", "click", finalizeSelected);
+
+      // Navigation
+      on("#btnGoStats", "click", () => setView("viewStats"));
+      on("#btnGoHistory", "click", () => setView("viewHistory"));
+      on("#btnBackBoardFromStats", "click", () => setView("viewBoard"));
+      on("#btnBackBoardFromHistory", "click", () => setView("viewBoard"));
+
+      // Stats range buttons
+      on("#viewStats", "click", (e) => {
+        const b = e.target.closest("[data-range]");
+        if (!b) return;
+        const v = b.getAttribute("data-range");
+        statsRange = (v === "all") ? "all" : Number(v);
+        renderStats();
+      });
+
+      // History filters
+      on("#histSearch", "input", renderHistory);
+      on("#histPlatform", "change", renderHistory);
+      on("#histRange", "change", renderHistory);
+      on("#btnClearHistoryFilter", "click", clearHistoryFilters);
+      on("#btnExportCSV", "click", exportHistoryCSV);
+
+      // Quick Add
+      on("#btnQuickAdd", "click", openQuick);
+      on("#btnCloseQuick", "click", closeQuick);
+      on("#btnCancelQuick", "click", closeQuick);
+      on("#btnDoQuickAdd", "click", doQuickAdd);
+
+      on("#quickPaySeg", "click", (e) => {
+        const b = e.target.closest("button[data-pay]");
+        if (!b) return;
+        setQuickPay(b.getAttribute("data-pay"));
+      });
+
+      on("#quickCodes", "keydown", (e) => {
+        // Ctrl+Enter adiciona
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          doQuickAdd();
+        }
+      });
+
+      // clique fora fecha o quick modal
+      on("#quickOverlay", "click", (e) => {
+        if (e.target && e.target.id === "quickOverlay") closeQuick();
+      });
+
+      // ===== Delegação do BOARD (colunas)
+      on("#board", "click", async (e) => {
+        const el = e.target.closest("[data-act]");
+        if (!el) return;
+
+        const act = el.getAttribute("data-act");
+
+        if (act === "toggleAdd") {
+          const mid = el.getAttribute("data-mid");
+          return toggleLaneAdd(mid);
+        }
+
+        if (act === "clearDraft") {
+          const mid = el.getAttribute("data-mid");
+          return clearLaneDraft(mid);
+        }
+
+        if (act === "addHere") {
+          const mid = el.getAttribute("data-mid");
+          return addOrdersToMotoboy(mid);
+        }
+
+        if (act === "pay") {
+          const mid = el.getAttribute("data-mid");
+          const pay = el.getAttribute("data-pay");
+          return setLanePayment(mid, pay);
+        }
+
+        if (act === "delLane") {
+          const mid = el.getAttribute("data-mid");
+          return deleteMotoboy(mid);
+        }
+
+        if (act === "delOrder") {
+          const id = el.getAttribute("data-id");
+          return delOrder(id);
+        }
+      });
+
+      on("#board", "change", (e) => {
+        const cb = e.target;
+        if (!cb || cb.tagName !== "INPUT") return;
+        if (cb.getAttribute("data-act") !== "toggleSel") return;
+        const id = cb.getAttribute("data-id");
+        toggleSel(id, cb.checked);
+      });
+
+      on("#board", "input", (e) => {
+        const t = e.target;
+        if (!t) return;
+        const mid = t.getAttribute("data-mid");
+        const k = t.getAttribute("data-k");
+        if (!mid || !k) return;
+        setLaneField(mid, k, t.value);
+      });
+
+      // Ctrl+Enter dentro do textarea da coluna adiciona
+      on("#board", "keydown", (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (t.tagName !== "TEXTAREA") return;
+        const k = t.getAttribute("data-k");
+        const mid = t.getAttribute("data-mid");
+        if (k !== "codes" || !mid) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          addOrdersToMotoboy(mid);
+        }
+      });
+
+      // ===== Atalhos globais
+      document.addEventListener("keydown", (e) => {
+        // ESC fecha modais
+        if (e.key === "Escape") {
+          // fecha quick se aberto
+          if (!document.getElementById("quickOverlay").classList.contains("hidden")) closeQuick();
+
+          // fecha confirm se aberto (aciona cancelar)
+          const conf = document.getElementById("confirmOverlay");
+          if (conf && !conf.classList.contains("hidden")) {
+            const cancel = document.getElementById("confirmCancelBtn");
+            if (cancel) cancel.click();
+          }
+        }
+
+        // Ctrl+Shift+A abre quick add
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === "a")) {
+          e.preventDefault();
+          openQuick();
+        }
+
+        // Ctrl+F abre histórico e foca busca
+        if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "f")) {
+          e.preventDefault();
+          setView("viewHistory");
+          setTimeout(() => {
+            const inp = document.getElementById("histSearch");
+            if (inp) inp.focus();
+          }, 0);
+        }
+      });
+
+      // ===== Diagnóstico: se der erro JS, mostra toast
+      window.addEventListener("error", (ev) => {
+        try {
+          toast("bad", "Erro JS", (ev && ev.message) ? ev.message : "Erro desconhecido");
+        } catch (_) { }
+      });
+
+      window.addEventListener("unhandledrejection", (ev) => {
+        try {
+          const msg = (ev && ev.reason && ev.reason.message) ? ev.reason.message : String(ev.reason || "Promise rejeitada");
+          toast("bad", "Promise error", msg);
+        } catch (_) { }
+      });
+    }
+
+    // Boot
+    function startApp() {
+      load();
+      wire();
+      refreshQuickMotoboySelect();
+      renderAll();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", startApp);
+    } else {
+      startApp();
+    }
+  </script>
+</body>
+<script>
+  // UI simples de update
+  const bar = document.createElement("div");
+  bar.style.cssText = `
+    position: fixed; left: 18px; right: 18px; bottom: 18px;
+    background: #141923; border: 1px solid rgba(255,255,255,.08);
+    padding: 12px 14px; border-radius: 14px; color: #f1f1f1;
+    display: none; gap: 10px; align-items: center; justify-content: space-between;
+    box-shadow: 0 12px 30px rgba(0,0,0,.45); z-index: 9999;
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  `;
+  bar.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:3px;">
+      <div id="updTitle" style="font-weight:700;">Atualizações</div>
+      <div id="updMsg" style="opacity:.85; font-size:13px;">...</div>
+      <div id="updProg" style="opacity:.85; font-size:12px; display:none;"></div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button id="btnCheck" style="background:#171a21; border:1px solid rgba(255,255,255,.10); color:#f1f1f1; padding:10px 12px; border-radius:12px; cursor:pointer;">Verificar</button>
+      <button id="btnInstall" style="background:#f5c542; border:none; color:#0f1115; padding:10px 12px; border-radius:12px; font-weight:800; cursor:pointer; display:none;">Reiniciar e atualizar</button>
+      <button id="btnClose" style="background:transparent; border:1px solid rgba(255,255,255,.10); color:#f1f1f1; padding:10px 12px; border-radius:12px; cursor:pointer;">Fechar</button>
+    </div>
+  `;
+  document.body.appendChild(bar);
+
+  const updMsg = bar.querySelector("#updMsg");
+  const updProg = bar.querySelector("#updProg");
+  const btnCheck = bar.querySelector("#btnCheck");
+  const btnInstall = bar.querySelector("#btnInstall");
+  const btnClose = bar.querySelector("#btnClose");
+
+  function show(msg) { bar.style.display = "flex"; updMsg.textContent = msg; }
+
+  // segura se não estiver no Electron
+  if (window.updates) {
+    window.updates.onStatus((m) => show(m));
+
+    window.updates.onAvailable((info) => {
+      show("Atualização encontrada. Baixando...");
+      btnInstall.style.display = "none";
+      updProg.style.display = "none";
+    });
+
+    window.updates.onProgress((p) => {
+      const pct = Math.round(p.percent || 0);
+      updProg.style.display = "block";
+      updProg.textContent = `Baixando: ${pct}%`;
+      show("Atualização encontrada. Baixando...");
+    });
+
+    window.updates.onDownloaded(() => {
+      show("Atualização pronta! Reinicie para aplicar.");
+      btnInstall.style.display = "inline-block";
+      updProg.style.display = "none";
+    });
+
+    window.updates.onError((m) => show("Erro ao atualizar: " + m));
+
+    btnCheck.onclick = () => window.updates.checkNow();
+    btnInstall.onclick = () => window.updates.quitAndInstall();
+    btnClose.onclick = () => (bar.style.display = "none");
+  }
+</script>
+<script>
+  console.log("PRELOAD?", window.api || window.electronAPI || window.updates || "nada exposto");
+</script>
+
+
+</html>

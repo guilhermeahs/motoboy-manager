@@ -1,0 +1,49 @@
+{
+  "name": "motoboy-manager",
+  "version": "1.0.0",
+  "main": "src/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build:win": "electron-builder --win nsis",
+    "release": "electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.suaempresa.motoboymanager",
+    "productName": "Motoboy Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Motoboy Manager"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "SEU_USUARIO",
+        "repo": "SEU_REPO"
+      }
+    ]
+  }
+}
