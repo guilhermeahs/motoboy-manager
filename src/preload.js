@@ -10,7 +10,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Backup em arquivo (Documentos/MotoboyManager/backup.json)
   saveBackup: (state) => ipcRenderer.invoke("backup:save", state),
   loadBackup: () => ipcRenderer.invoke("backup:load"),
-  revealBackupFolder: () => ipcRenderer.invoke("backup:reveal")
+  revealBackupFolder: () => ipcRenderer.invoke("backup:reveal"),
+
+  // ✅ Novidades / changelog
+  getVersion: () => ipcRenderer.invoke("app:getVersion"),
+  getChangelog: () => ipcRenderer.invoke("app:getChangelog")
 });
 
 // Auto-update (electron-updater)

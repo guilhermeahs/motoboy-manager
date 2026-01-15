@@ -1,0 +1,20 @@
+{
+    "1.0.5": [
+        "⚠️ bugfix: corrigido problema na verificação de atualizações em algumas máquinas",
+        "🆕 feature: adicionado ícone personalizado para o instalador e app"
+    ],
+    "1.0.4": [
+        "✅ APP abrindo normalmente",
+        "❌ DevTools desativado"
+    ],
+    "1.0.3": [
+        "✅ Aviso de novidades após atualizar"
+    ],
+    "1.0.1": [
+        "🛠️ Ajustes de estabilidade"
+    ],
+    "1.0.0": [
+        "🚀 Primeira versão pública",
+        "📦 Instalador + base do auto-update"
+    ]
+}

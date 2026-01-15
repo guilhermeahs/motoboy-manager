@@ -25,7 +25,7 @@ function initBackupPaths() {
 function ensureBackupDir() {
   try {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function createWindow() {
@@ -40,6 +40,9 @@ function createWindow() {
     frame: false,
     autoHideMenuBar: true,
 
+    // ✅ ÍCONE DA JANELA
+    icon: path.join(__dirname, "..", "assets", "icon.png"),
+
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -50,11 +53,11 @@ function createWindow() {
   // Remove menu do app (File/Edit/View...)
   try {
     Menu.setApplicationMenu(null);
-  } catch (_) {}
+  } catch (_) { }
 
   // index.html está na RAIZ do projeto (um nível acima de /src)
   mainWindow.loadFile(path.join(__dirname, "..", "index.html"));
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 }
 
 function sendToUI(channel, payload) {
@@ -186,3 +189,20 @@ ipcMain.handle("backup:reveal", async () => {
     return { ok: false, error: String(e), dir: BACKUP_DIR };
   }
 });
+
+// Retorna versão do app
+ipcMain.handle("app:getVersion", async () => {
+  return app.getVersion();
+});
+
+// Retorna changelog.json (se existir)
+ipcMain.handle("app:getChangelog", async () => {
+  try {
+    const file = path.join(app.getAppPath(), "changelog.json");
+    const raw = fs.readFileSync(file, "utf-8");
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+});
+

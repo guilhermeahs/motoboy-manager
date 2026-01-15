@@ -1,6 +1,6 @@
 {
   "name": "motoboy-manager",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "main": "src/main.js",
   "type": "commonjs",
   "scripts": {
@@ -14,24 +14,30 @@
   },
   "devDependencies": {
     "electron": "^31.0.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.0.0",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5"
   },
   "build": {
     "appId": "com.suaempresa.motoboymanager",
     "productName": "Motoboy Manager",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "files": [
       "**/*",
       "!dist/**"
     ],
     "win": {
+      "icon": "icon.ico",
       "target": [
         "nsis"
       ]
     },
     "nsis": {
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
       "oneClick": true,
       "perMachine": false,
       "createDesktopShortcut": true,
@@ -42,7 +48,8 @@
       {
         "provider": "github",
         "owner": "guilhermeahs",
-        "repo": "motoboy-manager"
+        "repo": "motoboy-manager",
+        "releaseType": "release"
       }
     ]
   }

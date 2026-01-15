@@ -7,7 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
-
   <style>
     :root {
       --bg: #0f1115;
@@ -1016,18 +1015,82 @@
         min-width: 92vw;
       }
     }
+
+    /* Logo na topbar */
+    .brandLogo {
+      height: 32px;
+      width: auto;
+    }
+
+    /* Marca d'água MUITO suave (não atrapalha clique) */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url("./assets/logo-horizontal-transparent.png") center 22% / min(78vw, 980px) auto no-repeat;
+      opacity: .035;
+      /* aumenta pra .05 se quiser mais visível */
+      filter: blur(1.2px) saturate(.9);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* garante que o app fique acima da marca d'água */
+    .topbar,
+    .wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Topbar mais alinhada e clean */
+    .topbar {
+      padding: 12px 16px;
+      min-height: 64px;
+    }
+
+    .brand {
+      gap: 12px;
+    }
+
+    .brandLogo {
+      width: 70px;
+      height: 34px;
+      border-radius: 10px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .10);
+      padding: 4px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      box-shadow: 0 0 0 4px rgba(245, 197, 66, .12);
+    }
+
+    .brandText>div:first-child {
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+
+    .brandText .sub {
+      font-size: 12px;
+      opacity: .85;
+    }
   </style>
 </head>
 
 <body>
   <div class="topbar" id="appTitlebar">
     <div class="brand">
+      <img class="brandLogo" src="./assets/logo-horizontal.png" alt="Motoboy Manager" />
       <div class="dot"></div>
       <div class="brandText">
         <div>Motoboy Manager</div>
         <div class="sub">Adicionar pedidos pelo + na coluna • plataforma automática (3/4/6)</div>
       </div>
     </div>
+
 
     <div class="winBtns">
       <button class="winBtn" id="btnMin" title="Minimizar"><span class="glyph g-min"></span></button>
@@ -2986,6 +3049,54 @@
       startApp();
     }
   </script>
+  <script>
+    (async function () {
+      try {
+        if (!window.electronAPI?.getVersion) return;
+
+        const current = await window.electronAPI.getVersion();
+        const lastSeen = localStorage.getItem("mm_last_seen_version") || "";
+        if (lastSeen === current) return;
+
+        const changelog = await window.electronAPI.getChangelog();
+        const items = (changelog[current] || []).map(t => `<li style="margin:6px 0;">${t}</li>`).join("");
+
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;";
+        const box = document.createElement("div");
+        box.style.cssText = "width:min(720px,96vw);background:#141923;border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.55);color:#f1f1f1;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;";
+        box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:18px;font-weight:900;">O que mudou</div>
+          <div style="opacity:.85;margin-top:2px;">Atualizado para <b>${current}</b></div>
+        </div>
+        <button id="mmClose" style="background:#171a21;border:1px solid rgba(255,255,255,.10);color:#f1f1f1;padding:10px 12px;border-radius:12px;cursor:pointer;">Fechar</button>
+      </div>
+      <div style="margin-top:12px;line-height:1.35;">
+        ${items ? `<ul style="margin:10px 0 0 18px;padding:0;">${items}</ul>` : `<div style="opacity:.8;margin-top:10px;">Sem notas para esta versão.</div>`}
+      </div>
+      <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+        <button id="mmOk" style="background:#f5c542;border:none;color:#0f1115;padding:10px 14px;border-radius:12px;font-weight:900;cursor:pointer;">Entendi</button>
+      </div>
+    `;
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        function close() {
+          localStorage.setItem("mm_last_seen_version", current);
+          overlay.remove();
+        }
+
+        box.querySelector("#mmClose").onclick = close;
+        box.querySelector("#mmOk").onclick = close;
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+      } catch (e) {
+        console.log("WhatsNew error:", e);
+      }
+    })();
+  </script>
+
 </body>
 <script>
   // UI simples de update
