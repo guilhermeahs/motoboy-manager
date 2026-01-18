@@ -1,15 +1,27 @@
-const { app, BrowserWindow, ipcMain, Menu, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
+// ✅ Ajuda o Windows (taskbar/pin/atalhos) a associar ícone corretamente
+app.setAppUserModelId("com.suaempresa.motoboymanager");
+
+// ✅ Caminho do ícone:
+// - DEV: /assets/icon.png
+// - PACKAGED: tenta resources/assets/icon.png; se não existir, usa assets dentro do app
+const iconPath = (() => {
+  if (!app.isPackaged) return path.join(__dirname, "..", "assets", "icon.png");
+
+  const p1 = path.join(process.resourcesPath, "assets", "icon.png"); // se você usar extraResources
+  if (fs.existsSync(p1)) return p1;
+
+  // fallback (funciona se assets estiver dentro do app.asar / build)
+  const p2 = path.join(app.getAppPath(), "assets", "icon.png");
+  return p2;
+})();
+
 // =============================================================
 //  Motoboy Manager - Main Process (Electron)
-//  - Abre o index.html da raiz
-//  - Topbar custom (frame: false)
-//  - Backup em arquivo (Documentos/MotoboyManager/backup.json)
-//  - Auto-update (somente quando empacotado/instalado)
 // =============================================================
-
 let mainWindow = null;
 
 // Backup em arquivo: Documentos/MotoboyManager/backup.json
@@ -25,39 +37,7 @@ function initBackupPaths() {
 function ensureBackupDir() {
   try {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  } catch (_) { }
-}
-
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 980,
-    minHeight: 640,
-    backgroundColor: "#0f1115",
-
-    // Topbar custom
-    frame: false,
-    autoHideMenuBar: true,
-
-    // ✅ ÍCONE DA JANELA
-    icon: path.join(__dirname, "..", "assets", "icon.png"),
-
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  });
-
-  // Remove menu do app (File/Edit/View...)
-  try {
-    Menu.setApplicationMenu(null);
-  } catch (_) { }
-
-  // index.html está na RAIZ do projeto (um nível acima de /src)
-  mainWindow.loadFile(path.join(__dirname, "..", "index.html"));
-  // mainWindow.webContents.openDevTools();
+  } catch (_) {}
 }
 
 function sendToUI(channel, payload) {
@@ -67,25 +47,98 @@ function sendToUI(channel, payload) {
 }
 
 // =============================================================
+// Helpers: Release Notes / Changelog local
+// =============================================================
+function stripHtml(s = "") {
+  return String(s).replace(/<[^>]*>/g, "").trim();
+}
+
+function normalizeReleaseNotes(releaseNotes) {
+  if (!releaseNotes) return "";
+  if (Array.isArray(releaseNotes)) {
+    return releaseNotes
+      .map((x) => stripHtml(x?.note ?? x))
+      .filter(Boolean)
+      .join("\n\n");
+  }
+  return stripHtml(releaseNotes);
+}
+
+function readLocalChangelog() {
+  try {
+    const file = path.join(app.getAppPath(), "changelog.json"); // seu arquivo está na raiz ✅
+    const raw = fs.readFileSync(file, "utf-8");
+    return JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+}
+
+function notesFromLocalChangelog(changelog, version) {
+  if (!changelog || !version) return "";
+  const v = changelog[version];
+  if (!v) return "";
+  if (Array.isArray(v)) return v.join("\n");
+  if (typeof v === "string") return v;
+  return "";
+}
+
+// =============================================================
+// Window
+// =============================================================
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 980,
+    minHeight: 640,
+    backgroundColor: "#0f1115",
+
+    frame: false,
+    autoHideMenuBar: true,
+    icon: iconPath,
+
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+
+      // ✅ DevTools desativado
+      devTools: false,
+    }
+  });
+
+  try { Menu.setApplicationMenu(null); } catch (_) {}
+
+  // bloqueia atalhos do DevTools (F12 / Ctrl+Shift+I/J/C)
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    const key = (input.key || "").toLowerCase();
+    const ctrlOrCmd = input.control || input.meta;
+    const isDevtoolsCombo =
+      input.key === "F12" ||
+      (ctrlOrCmd && input.shift && (key === "i" || key === "j" || key === "c"));
+    if (isDevtoolsCombo) event.preventDefault();
+  });
+
+  mainWindow.loadFile(path.join(__dirname, "..", "index.html"));
+}
+
+// =============================================================
 // Auto-update (electron-updater)
-// - Só ativa quando o app está empacotado (instalador)
-// - No dev, a UI continua existindo, mas os botões só mostram aviso
 // =============================================================
 function setupAutoUpdate() {
   // No dev, não tenta atualizar (evita erro/ruído)
   if (!app.isPackaged) {
     ipcMain.handle("upd:checkNow", async () => {
-      sendToUI("upd:status", "Atualizações ficam disponíveis apenas no instalador (versão empacotada). ");
+      sendToUI("upd:status", "Atualizações ficam disponíveis apenas no instalador (versão empacotada).");
       return { ok: true, dev: true };
     });
     ipcMain.handle("upd:quitAndInstall", async () => ({ ok: false, dev: true }));
     return;
   }
 
-  // Carrega electron-updater só quando empacotado
   let autoUpdater;
   try {
-    // eslint-disable-next-line global-require
     ({ autoUpdater } = require("electron-updater"));
   } catch (e) {
     sendToUI("upd:error", "electron-updater não está instalado/configurado: " + String(e));
@@ -100,23 +153,56 @@ function setupAutoUpdate() {
   autoUpdater.on("update-not-available", () => sendToUI("upd:status", "Você já está na versão mais recente."));
   autoUpdater.on("error", (err) => sendToUI("upd:error", (err && err.message) ? err.message : String(err)));
   autoUpdater.on("download-progress", (p) => sendToUI("upd:progress", p));
-  autoUpdater.on("update-downloaded", (info) => sendToUI("upd:downloaded", info));
+
+  // ✅ Quando baixar: usa changelog.json (local) e cai pro releaseNotes se precisar
+  autoUpdater.on("update-downloaded", async (info) => {
+    sendToUI("upd:downloaded", info);
+
+    const ver = info?.version ? String(info.version) : "";
+
+    const local = readLocalChangelog();
+    const localNotes = notesFromLocalChangelog(local, ver);
+
+    const gitNotes = normalizeReleaseNotes(info?.releaseNotes);
+
+    const notes =
+      (localNotes && localNotes.trim()) ||
+      (gitNotes && gitNotes.trim()) ||
+      "Sem changelog nesta versão.";
+
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "Atualização baixada",
+      message: ver ? `Nova versão ${ver} pronta para instalar` : "Nova versão pronta para instalar",
+      detail: `Changelog:\n\n${notes}`,
+      buttons: ["Instalar agora", "Depois"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+
+    if (response === 0) {
+      sendToUI("upd:status", "Fechando para instalar atualização...");
+      if (mainWindow) mainWindow.hide();
+      setTimeout(() => autoUpdater.quitAndInstall(false, true), 300);
+    }
+  });
 
   ipcMain.handle("upd:quitAndInstall", async () => {
-    autoUpdater.quitAndInstall();
+    sendToUI("upd:status", "Fechando para instalar atualização...");
+    if (mainWindow) mainWindow.hide();
+    setTimeout(() => autoUpdater.quitAndInstall(false, true), 300);
     return { ok: true };
   });
 
   ipcMain.handle("upd:checkNow", async () => {
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdates();
     return { ok: true };
   });
 
-  // Checa ao abrir
-  autoUpdater.checkForUpdatesAndNotify();
-
-  // Checar a cada 6h
-  setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 6 * 60 * 60 * 1000);
+  // Checa ao abrir + a cada 6h
+  autoUpdater.checkForUpdates();
+  setInterval(() => autoUpdater.checkForUpdates(), 6 * 60 * 60 * 1000);
 }
 
 // =============================================================
@@ -205,4 +291,3 @@ ipcMain.handle("app:getChangelog", async () => {
     return {};
   }
 });
-

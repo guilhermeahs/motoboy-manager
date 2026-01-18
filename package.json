@@ -1,6 +1,8 @@
 {
   "name": "motoboy-manager",
-  "version": "1.0.5",
+  "version": "1.0.7",
+  "description": "Motoboy Manager",
+  "author": "Guilherme AHS",
   "main": "src/main.js",
   "type": "commonjs",
   "scripts": {
@@ -22,8 +24,7 @@
     "appId": "com.suaempresa.motoboymanager",
     "productName": "Motoboy Manager",
     "directories": {
-      "output": "dist",
-      "buildResources": "assets"
+      "output": "dist"
     },
     "files": [
       "**/*",
@@ -51,6 +52,7 @@
         "repo": "motoboy-manager",
         "releaseType": "release"
       }
+      
     ]
   }
 }
