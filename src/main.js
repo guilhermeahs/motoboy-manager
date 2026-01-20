@@ -7,48 +7,84 @@ app.setAppUserModelId("com.suaempresa.motoboymanager");
 
 // ✅ Caminho do ícone:
 // - DEV: /assets/icon.png
-// - PACKAGED: tenta resources/assets/icon.png; se não existir, usa assets dentro do app
-const iconPath = (() => {
-  if (!app.isPackaged) return path.join(__dirname, "..", "assets", "icon.png");
-
-  const p1 = path.join(process.resourcesPath, "assets", "icon.png"); // se você usar extraResources
-  if (fs.existsSync(p1)) return p1;
-
-  // fallback (funciona se assets estiver dentro do app.asar / build)
-  const p2 = path.join(app.getAppPath(), "assets", "icon.png");
-  return p2;
-})();
+// - PACKAGED: resources/assets/icon.png (via extraResources)
+const iconPath = app.isPackaged
+  ? path.join(process.resourcesPath, "assets", "icon.png")
+  : path.join(__dirname, "..", "assets", "icon.png");
 
 // =============================================================
 //  Motoboy Manager - Main Process (Electron)
+//  - Abre o index.html da raiz
+//  - Topbar custom (frame: false)
+//  - Backup em arquivo (Documentos/MotoboyManager/backup.json)
+//  - Auto-update (somente quando empacotado/instalado)
 // =============================================================
+
 let mainWindow = null;
 
-// Backup em arquivo: Documentos/MotoboyManager/backup.json
-const BACKUP_DIR_NAME = "MotoboyManager";
+// Backup em arquivo (fica em userData para poder ser apagado no uninstall via NSIS)
+// Ex.: C:\Users\<user>\AppData\Roaming\Motoboy Manager\backup\backup.json
+const BACKUP_DIR_NAME = "backup";
 let BACKUP_DIR = "";
 let BACKUP_FILE = "";
 
 function initBackupPaths() {
-  BACKUP_DIR = path.join(app.getPath("documents"), BACKUP_DIR_NAME);
+  BACKUP_DIR = path.join(app.getPath("userData"), BACKUP_DIR_NAME);
   BACKUP_FILE = path.join(BACKUP_DIR, "backup.json");
 }
 
 function ensureBackupDir() {
   try {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  } catch (_) {}
+  } catch (_) { }
 }
 
-function sendToUI(channel, payload) {
-  if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send(channel, payload);
-  }
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 980,
+    minHeight: 640,
+    backgroundColor: "#0f1115",
+
+    // Topbar custom
+    frame: false,
+    autoHideMenuBar: true,
+
+    // ✅ ÍCONE DA JANELA (funciona no empacotado também)
+    icon: iconPath,
+
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      // ✅ Desativa DevTools permanentemente
+      devTools: false
+    }
+  });
+
+  // Remove menu do app (File/Edit/View...)
+  try {
+    Menu.setApplicationMenu(null);
+  } catch (_) { }
+
+  // index.html está na RAIZ do projeto (um nível acima de /src)
+  mainWindow.loadFile(path.join(__dirname, "..", "index.html"));
+
+  // ✅ Bloqueia atalhos comuns do DevTools (mesmo com devTools: false)
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    const key = (input.key || "").toLowerCase();
+    const ctrlOrCmd = input.control || input.meta;
+
+    const isDevtoolsCombo =
+      input.key === "F12" ||
+      (ctrlOrCmd && input.shift && (key === "i" || key === "j" || key === "c"));
+
+    if (isDevtoolsCombo) event.preventDefault();
+  });
+
 }
 
-// =============================================================
-// Helpers: Release Notes / Changelog local
-// =============================================================
 function stripHtml(s = "") {
   return String(s).replace(/<[^>]*>/g, "").trim();
 }
@@ -64,79 +100,29 @@ function normalizeReleaseNotes(releaseNotes) {
   return stripHtml(releaseNotes);
 }
 
-function readLocalChangelog() {
-  try {
-    const file = path.join(app.getAppPath(), "changelog.json"); // seu arquivo está na raiz ✅
-    const raw = fs.readFileSync(file, "utf-8");
-    return JSON.parse(raw);
-  } catch (_) {
-    return null;
+function sendToUI(channel, payload) {
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send(channel, payload);
   }
-}
-
-function notesFromLocalChangelog(changelog, version) {
-  if (!changelog || !version) return "";
-  const v = changelog[version];
-  if (!v) return "";
-  if (Array.isArray(v)) return v.join("\n");
-  if (typeof v === "string") return v;
-  return "";
-}
-
-// =============================================================
-// Window
-// =============================================================
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 980,
-    minHeight: 640,
-    backgroundColor: "#0f1115",
-
-    frame: false,
-    autoHideMenuBar: true,
-    icon: iconPath,
-
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-
-      // ✅ DevTools desativado
-      devTools: false,
-    }
-  });
-
-  try { Menu.setApplicationMenu(null); } catch (_) {}
-
-  // bloqueia atalhos do DevTools (F12 / Ctrl+Shift+I/J/C)
-  mainWindow.webContents.on("before-input-event", (event, input) => {
-    const key = (input.key || "").toLowerCase();
-    const ctrlOrCmd = input.control || input.meta;
-    const isDevtoolsCombo =
-      input.key === "F12" ||
-      (ctrlOrCmd && input.shift && (key === "i" || key === "j" || key === "c"));
-    if (isDevtoolsCombo) event.preventDefault();
-  });
-
-  mainWindow.loadFile(path.join(__dirname, "..", "index.html"));
 }
 
 // =============================================================
 // Auto-update (electron-updater)
+// - Só ativa quando o app está empacotado (instalador)
+// - No dev, a UI continua existindo, mas os botões só mostram aviso
 // =============================================================
 function setupAutoUpdate() {
   // No dev, não tenta atualizar (evita erro/ruído)
   if (!app.isPackaged) {
     ipcMain.handle("upd:checkNow", async () => {
-      sendToUI("upd:status", "Atualizações ficam disponíveis apenas no instalador (versão empacotada).");
+      sendToUI("upd:status", "Atualizações ficam disponíveis apenas no instalador (versão empacotada). ");
       return { ok: true, dev: true };
     });
     ipcMain.handle("upd:quitAndInstall", async () => ({ ok: false, dev: true }));
     return;
   }
 
+  // Carrega electron-updater só quando empacotado
   let autoUpdater;
   try {
     ({ autoUpdater } = require("electron-updater"));
@@ -153,42 +139,37 @@ function setupAutoUpdate() {
   autoUpdater.on("update-not-available", () => sendToUI("upd:status", "Você já está na versão mais recente."));
   autoUpdater.on("error", (err) => sendToUI("upd:error", (err && err.message) ? err.message : String(err)));
   autoUpdater.on("download-progress", (p) => sendToUI("upd:progress", p));
-
-  // ✅ Quando baixar: usa changelog.json (local) e cai pro releaseNotes se precisar
   autoUpdater.on("update-downloaded", async (info) => {
     sendToUI("upd:downloaded", info);
 
+    // ✅ Mostra changelog (Release Notes do GitHub)
+    const notes = normalizeReleaseNotes(info?.releaseNotes) || "Sem changelog nesta versão.";
     const ver = info?.version ? String(info.version) : "";
 
-    const local = readLocalChangelog();
-    const localNotes = notesFromLocalChangelog(local, ver);
+    try {
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: "info",
+        title: "Atualização baixada",
+        message: ver ? `Nova versão ${ver} pronta para instalar` : "Nova versão pronta para instalar",
+        detail: `Changelog:\n\n${notes}`,
+        buttons: ["Instalar agora", "Depois"],
+        defaultId: 0,
+        cancelId: 1,
+        noLink: true
+      });
 
-    const gitNotes = normalizeReleaseNotes(info?.releaseNotes);
-
-    const notes =
-      (localNotes && localNotes.trim()) ||
-      (gitNotes && gitNotes.trim()) ||
-      "Sem changelog nesta versão.";
-
-    const { response } = await dialog.showMessageBox(mainWindow, {
-      type: "info",
-      title: "Atualização baixada",
-      message: ver ? `Nova versão ${ver} pronta para instalar` : "Nova versão pronta para instalar",
-      detail: `Changelog:\n\n${notes}`,
-      buttons: ["Instalar agora", "Depois"],
-      defaultId: 0,
-      cancelId: 1,
-      noLink: true,
-    });
-
-    if (response === 0) {
-      sendToUI("upd:status", "Fechando para instalar atualização...");
-      if (mainWindow) mainWindow.hide();
-      setTimeout(() => autoUpdater.quitAndInstall(false, true), 300);
+      if (response === 0) {
+        sendToUI("upd:status", "Fechando para instalar atualização...");
+        if (mainWindow) mainWindow.hide();
+        setTimeout(() => autoUpdater.quitAndInstall(false, true), 300);
+      }
+    } catch (_) {
+      // Se o dialog falhar, mantém o fluxo antigo: instala ao fechar (autoInstallOnAppQuit)
     }
   });
 
   ipcMain.handle("upd:quitAndInstall", async () => {
+    // dica: evita sensação de “travou” na UI
     sendToUI("upd:status", "Fechando para instalar atualização...");
     if (mainWindow) mainWindow.hide();
     setTimeout(() => autoUpdater.quitAndInstall(false, true), 300);
@@ -200,8 +181,10 @@ function setupAutoUpdate() {
     return { ok: true };
   });
 
-  // Checa ao abrir + a cada 6h
+  // Checa ao abrir
   autoUpdater.checkForUpdates();
+
+  // Checar a cada 6h
   setInterval(() => autoUpdater.checkForUpdates(), 6 * 60 * 60 * 1000);
 }
 

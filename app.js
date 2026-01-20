@@ -7,7 +7,7 @@ import { Pedidos } from "./js/pedidos.js";
 
 const App = {
   state: {
-    ui: { dayFilter: "", seededMotoboys: false }, // YYYY-MM-DD
+    ui: { dayFilter: "" }, // YYYY-MM-DD
     user: null,
     license: { level: 0, key: "" },
     motoboys: [],
@@ -19,39 +19,22 @@ const App = {
     // Load
     this.state = Storage.loadAppState(this.state);
 
-    // garante defaults novos
-    if (typeof this.state.ui?.seededMotoboys !== "boolean") this.state.ui.seededMotoboys = true;
-
     // Auth
     this.state.user = Auth.getCurrentUser();
 
     // License
     this.state.license = License.getLicense();
 
-    // Seed básico (só na 1a vez). Se o usuário apagar todos, não re-semeia.
-    if (!this.state.ui.seededMotoboys && this.state.motoboys.length === 0) {
+    // Seed básico (se vazio)
+    if (this.state.motoboys.length === 0) {
       this.state.motoboys = [
         { id: UI.uid(), name: "Motoboy 01", tag: "" },
         { id: UI.uid(), name: "Motoboy 02", tag: "" },
       ];
-      this.state.ui.seededMotoboys = true;
     }
 
-    // Migração: não existe mais "sem atribuição".
-    // - Pedidos ativos sem motoboy (ou com motoboy inexistente) são APAGADOS.
-    // - No histórico, apenas normaliza para "" quando o motoboy não existe mais.
-    const ids = new Set(this.state.motoboys.map(m => m.id));
-
-    this.state.pedidos = (this.state.pedidos || []).filter(p => {
-      const id = String(p?.motoboyId ?? "").trim();
-      if (!id || id === "ORPHAN") return false;
-      return ids.has(id);
-    });
-
-    (this.state.historico || []).forEach(h => {
-      const id = String(h?.motoboyId ?? "").trim();
-      if (!id || id === "ORPHAN" || !ids.has(id)) h.motoboyId = "";
-    });
+    // garante ORPHAN sempre
+    Motoboys.ensureOrphan(this.state);
 
     // filtro de dia padrão = hoje (se vazio)
     const today = UI.dayKey(new Date());
@@ -140,28 +123,13 @@ const App = {
   refreshMotoboysUI() {
     // dropdown do batch
     const selBatch = document.getElementById("batchMotoboy");
-    const prev = selBatch.value;
     selBatch.innerHTML = "";
-
-    if (this.state.motoboys.length === 0) {
+    this.state.motoboys.forEach(mb => {
       const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent = "Cadastre um motoboy para adicionar pedidos";
+      opt.value = mb.id;
+      opt.textContent = mb.tag ? `${mb.name} (${mb.tag})` : mb.name;
       selBatch.appendChild(opt);
-      selBatch.disabled = true;
-    } else {
-      selBatch.disabled = false;
-      this.state.motoboys.forEach(mb => {
-        const opt = document.createElement("option");
-        opt.value = mb.id;
-        opt.textContent = mb.tag ? `${mb.name} (${mb.tag})` : mb.name;
-        selBatch.appendChild(opt);
-      });
-
-      // mantém seleção anterior se ainda existir; senão, seleciona o primeiro
-      const stillOk = this.state.motoboys.some(m => m.id === prev);
-      selBatch.value = stillOk ? prev : this.state.motoboys[0].id;
-    }
+    });
 
     // list de motoboys
     const list = document.getElementById("motoboysList");
@@ -180,6 +148,10 @@ const App = {
       btnEdit.className = "btn";
       btnEdit.textContent = "Editar";
       btnEdit.onclick = async () => {
+        if (mb.id === "ORPHAN") {
+          UI.toast("Info", "Esse motoboy é fixo (Sem motoboy).", "ok");
+          return;
+        }
         const name = prompt("Nome do motoboy:", mb.name);
         if (name === null) return;
         const tag = prompt("Identificador (opcional):", mb.tag || "");
@@ -195,17 +167,23 @@ const App = {
       btnDel.className = "btn danger";
       btnDel.textContent = "Remover";
       btnDel.onclick = async () => {
-        const affected = this.state.pedidos.filter(p => p.motoboyId === mb.id).length;
+        if (mb.id === "ORPHAN") {
+          UI.toast("Info", "Não dá pra remover o 'Sem motoboy'.", "ok");
+          return;
+        }
+
         const ok = await UI.confirm(
           "Remover motoboy",
-          affected > 0
-            ? `Isso vai remover o motoboy e APAGAR ${affected} pedido(s) ativo(s) dele. Continuar?`
-            : "Isso vai remover o motoboy. Continuar?"
+          "Isso remove o motoboy. Pedidos ativos desse motoboy serão transferidos para 'Sem motoboy'. Continuar?"
         );
         if (!ok) return;
 
-        // apaga os pedidos ativos desse motoboy (sem "sem atribuição")
-        this.state.pedidos = this.state.pedidos.filter(p => p.motoboyId !== mb.id);
+        const orphanId = Motoboys.ensureOrphan(this.state);
+
+        // move pedidos pro ORPHAN
+        this.state.pedidos.forEach(p => {
+          if (p.motoboyId === mb.id) p.motoboyId = orphanId;
+        });
 
         Motoboys.remove(this.state, mb.id);
         this.persist();
@@ -234,20 +212,10 @@ const App = {
     const board = document.getElementById("board");
     board.innerHTML = "";
 
-    // sem motoboys: não existe lane "sem atribuição" (e nem dá pra adicionar pedidos)
-    if (this.state.motoboys.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "item";
-      empty.innerHTML = `<div><b>Nenhum motoboy cadastrado</b><br/><small>Cadastre um motoboy na aba Motoboys para começar.</small></div>`;
-      board.appendChild(empty);
-      return;
-    }
+    Motoboys.ensureOrphan(this.state);
 
-    // lanes: apenas motoboys (não existe mais "sem atribuição")
-    const lanes = this.state.motoboys.slice();
-
-    // render lanes
-    lanes.forEach(mb => {
+    // render lanes por motoboy
+    this.state.motoboys.forEach(mb => {
       const lane = document.createElement("div");
       lane.className = "lane";
 
@@ -257,9 +225,7 @@ const App = {
       const title = document.createElement("div");
       title.className = "laneTitle";
 
-      const count = mb.id
-        ? pedidosFiltrados.filter(p => p.motoboyId === mb.id).length
-        : 0;
+      const count = pedidosFiltrados.filter(p => p.motoboyId === mb.id).length;
       title.innerHTML = `<strong>${UI.escape(mb.name)}</strong><span>${count} pedido(s)</span>`;
 
       const btns = document.createElement("div");
@@ -389,7 +355,7 @@ const App = {
     Object.entries(countMb)
       .sort((a, b) => b[1] - a[1])
       .forEach(([id, qty]) => {
-        const name = id ? (mbMap.get(id) || "—") : "—";
+        const name = mbMap.get(id) || "—";
         const it = document.createElement("div");
         it.className = "item";
         it.innerHTML = `<div><b>${UI.escape(name)}</b><br/><small>Finalizados: ${qty}</small></div>`;
@@ -438,7 +404,7 @@ const App = {
     filtered.forEach(h => {
       const it = document.createElement("div");
       it.className = "item";
-      const mbName = h.motoboyId ? (mbMap.get(h.motoboyId) || "—") : "—";
+      const mbName = mbMap.get(h.motoboyId) || "—";
       it.innerHTML = `
         <div>
           <b>${UI.escape(h.code)}</b>
@@ -467,20 +433,9 @@ const App = {
   },
 
   bindTopbarButtons() {
-    const api = window.electronAPI;
-
-    const safeCall = (fn, msg) => {
-      if (typeof fn === "function") return fn();
-      UI.toast("Electron", msg, "bad");
-    };
-
-    const btnMin = document.getElementById("btnMin");
-    const btnMax = document.getElementById("btnMax");
-    const btnClose = document.getElementById("btnClose");
-
-    if (btnMin) btnMin.onclick = () => safeCall(api?.minimize, "Minimizar indisponível (abra pelo app Electron). ");
-    if (btnMax) btnMax.onclick = () => safeCall(api?.maximize, "Maximizar indisponível (abra pelo app Electron). ");
-    if (btnClose) btnClose.onclick = () => safeCall(api?.close, "Fechar indisponível (abra pelo app Electron). ");
+    document.getElementById("btnMin").onclick = () => UI.toast("Electron", "Minimizar: ligar via preload depois.", "ok");
+    document.getElementById("btnMax").onclick = () => UI.toast("Electron", "Maximizar: ligar via preload depois.", "ok");
+    document.getElementById("btnClose").onclick = () => UI.toast("Electron", "Fechar: ligar via preload depois.", "ok");
   },
 
   bindNavigation() {
@@ -578,6 +533,94 @@ const App = {
       this.refreshAll();
       UI.toast("Licença aplicada", `Nível ${this.state.license.level} liberado.`, "ok");
     };
+
+    // =========================
+    // Auto-update (Config)
+    // =========================
+    const api = window.electronAPI;
+
+    const elVer = document.getElementById("updVersion");
+    const elStatus = document.getElementById("updStatus");
+    const btnCheck = document.getElementById("btnUpdCheck");
+    const btnInstall = document.getElementById("btnUpdInstall");
+    const wrap = document.getElementById("updProgressWrap");
+    const bar = document.getElementById("updProgressBar");
+    const txt = document.getElementById("updProgressText");
+
+    const setStatus = (s) => { if (elStatus) elStatus.textContent = String(s ?? "—"); };
+
+    if (!btnCheck || !btnInstall || !elVer || !elStatus) {
+      // UI ainda não tem o card (ou ids diferentes)
+      return;
+    }
+
+    // Se não estiver no Electron/IPC, só desativa
+    if (!api || !api.checkUpdates) {
+      setStatus("Indisponível (abra pelo app Electron).");
+      btnCheck.disabled = true;
+      btnInstall.disabled = true;
+      elVer.textContent = "—";
+      return;
+    }
+
+    // Versão atual
+    api.getAppVersion?.().then(v => {
+      elVer.textContent = v || "—";
+    }).catch(() => {});
+
+    // Botão verificar
+    btnCheck.onclick = async () => {
+      btnCheck.disabled = true;
+      btnInstall.disabled = true;
+      if (wrap) wrap.style.display = "none";
+      if (bar) bar.style.width = "0%";
+      if (txt) txt.textContent = "0%";
+      setStatus("Procurando atualização...");
+      try {
+        await api.checkUpdates();
+      } catch (e) {
+        UI.toast("Atualização", "Falha ao verificar.", "bad");
+      } finally {
+        setTimeout(() => { btnCheck.disabled = false; }, 800);
+      }
+    };
+
+    // Botão instalar
+    btnInstall.onclick = async () => {
+      const ask = (UI && typeof UI.confirm === 'function')
+        ? await UI.confirm("Instalar atualização", "O app vai fechar para instalar. Continuar?")
+        : window.confirm("O app vai fechar para instalar a atualização. Continuar?");
+      if (!ask) return;
+      await api.installUpdate();
+    };
+
+    // Eventos vindos do main.js
+    api.onUpdStatus?.((msg) => setStatus(msg));
+    api.onUpdAvailable?.((info) => {
+      const v = info?.version ? `v${info.version}` : "nova versão";
+      setStatus(`Atualização disponível: ${v}`);
+    });
+
+    api.onUpdProgress?.((p) => {
+      const pct = Math.max(0, Math.min(100, Math.round(p?.percent ?? 0)));
+      if (wrap) wrap.style.display = "block";
+      if (bar) bar.style.width = pct + "%";
+      if (txt) txt.textContent = `Baixando: ${pct}%`;
+      setStatus("Baixando atualização...");
+    });
+
+    api.onUpdDownloaded?.((info) => {
+      const v = info?.version ? `v${info.version}` : "";
+      setStatus(`Atualização baixada ${v} — pronta para instalar.`);
+      btnInstall.disabled = false;
+      UI.toast("Atualização", "Baixada e pronta para instalar.", "ok");
+    });
+
+    api.onUpdError?.((err) => {
+      setStatus(`Erro: ${String(err || "desconhecido")}`);
+      UI.toast("Atualização", String(err || "Erro desconhecido"), "bad");
+    });
+
   },
 
   bindMotoboysActions() {
@@ -634,7 +677,13 @@ const App = {
       document.getElementById("batchCount").textContent = String(codes.length);
 
       // opcional: avisa quando tiver inválido
-      
+      if (invalid.length > 0) {
+        // não spammar: só mostra se o usuário parou de digitar um pouco
+        clearTimeout(window.__mmBadTimer);
+        window.__mmBadTimer = setTimeout(() => {
+          UI.toast("Códigos ignorados", `Só aceita 3, 4 ou 6 dígitos. Ignorados: ${invalid.slice(0, 6).join(", ")}${invalid.length > 6 ? "…" : ""}`, "bad");
+        }, 500);
+      }
     };
 
     ta.addEventListener("input", updateCount);
@@ -650,11 +699,6 @@ const App = {
 
     // Adicionar vários
     document.getElementById("btnBatchAdd").onclick = () => {
-      if (this.state.motoboys.length === 0) {
-        UI.toast("Atenção", "Cadastre um motoboy antes de adicionar pedidos.", "bad");
-        return;
-      }
-
       const codes = UI.parseCodes(ta.value);
       const invalid = UI.getInvalidCodes(ta.value);
       if (invalid.length > 0) {
@@ -669,7 +713,7 @@ const App = {
 
       const pay = document.getElementById("batchPay").value;
       const motoboyId = document.getElementById("batchMotoboy").value;
-      if (!motoboyId || !this.state.motoboys.some(m => m.id === motoboyId)) {
+      if (!motoboyId) {
         UI.toast("Atenção", "Selecione um motoboy.", "bad");
         return;
       }
@@ -678,14 +722,9 @@ const App = {
 
       let added = 0;
       codes.forEach(code => {
-        const res = Pedidos.add(this.state, { code, pay, motoboyId, dayKey });
-        if (res?.ok) added++;
+        Pedidos.add(this.state, { code, pay, motoboyId, dayKey });
+        added++;
       });
-
-      if (added === 0) {
-        UI.toast("Nada adicionado", "Nenhum pedido válido foi adicionado.", "bad");
-        return;
-      }
 
       ta.value = "";
       updateCount();

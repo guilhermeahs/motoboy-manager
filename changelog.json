@@ -1,13 +1,8 @@
 {
-    "1.0.7": [
-        "🛠️ fix: corrigido problema ao adicionar pedidos em lote que não atribuía motoboy corretamente"
-    
-    ],
-    "1.0.6": [
-        "🆕 feature: motoboy agora é obrigatório ao criar um pedido",
-        "🆕 feature: mudança no layout",
-        "🛠️ fix: removido aviso de códigos inválidos ao digitar pedidos em lote",
-        "🛠️ fix: removido DevTools aberto por padrão na aplicação "
+    "1.0.8": [
+        "🆕 feature: adicionado atalho no menu de contexto da bandeja para abrir o app",
+        "🆕 feature: adicionado ícone personalizado para a bandeja do sistema",
+        "⚙️ melhoria: atualizado dependências do projeto"
     ],
     "1.0.5": [
         "⚠️ bugfix: corrigido problema na verificação de atualizações em algumas máquinas",

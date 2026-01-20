@@ -1,6 +1,6 @@
 {
   "name": "motoboy-manager",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Motoboy Manager",
   "author": "Guilherme AHS",
   "main": "src/main.js",
@@ -43,7 +43,8 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Motoboy Manager"
+      "shortcutName": "Motoboy Manager",
+      "deleteAppDataOnUninstall": true
     },
     "publish": [
       {
@@ -52,7 +53,6 @@
         "repo": "motoboy-manager",
         "releaseType": "release"
       }
-      
     ]
   }
 }

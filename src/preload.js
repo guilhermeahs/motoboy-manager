@@ -14,7 +14,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // ✅ Novidades / changelog
   getVersion: () => ipcRenderer.invoke("app:getVersion"),
-  getChangelog: () => ipcRenderer.invoke("app:getChangelog")
+  getChangelog: () => ipcRenderer.invoke("app:getChangelog"),
+
+  // Auto-update (electron-updater)
+  checkUpdates: () => ipcRenderer.invoke("upd:checkNow"),
+  installUpdate: () => ipcRenderer.invoke("upd:quitAndInstall"),
+  getAppVersion: () => ipcRenderer.invoke("app:getVersion"),
+
+  onUpdStatus: (cb) => ipcRenderer.on("upd:status", (_, msg) => cb(msg)),
+  onUpdAvailable: (cb) => ipcRenderer.on("upd:available", (_, info) => cb(info)),
+  onUpdProgress: (cb) => ipcRenderer.on("upd:progress", (_, p) => cb(p)),
+  onUpdDownloaded: (cb) => ipcRenderer.on("upd:downloaded", (_, info) => cb(info)),
+  onUpdError: (cb) => ipcRenderer.on("upd:error", (_, err) => cb(err)),
+
 });
 
 // Auto-update (electron-updater)

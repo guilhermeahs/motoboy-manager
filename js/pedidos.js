@@ -23,16 +23,12 @@ export const Pedidos = {
     const id = UI.uid();
     const platform = this.detectPlatform(digits);
 
-    // Motoboy é obrigatório (não existe mais "sem atribuição")
-    const mb = String(motoboyId ?? "").trim();
-    if (!mb) return { ok: false, reason: "motoboy_required" };
-
     state.pedidos.push({
       id,
       code: digits,
       platform,
       pay: String(pay || "PIX"),
-      motoboyId: mb,
+      motoboyId: String(motoboyId || "ORPHAN"),
       dayKey: String(dayKey || UI.dayKey(new Date())),
       createdAt: Date.now()
     });
